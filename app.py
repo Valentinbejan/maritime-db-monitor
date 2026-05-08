@@ -1,0 +1,230 @@
+"""
+app.py — Streamlit entry point / landing page for the NAPA Maritime DB Monitor.
+
+This is the HOME page. It does NOT start or import the collector.
+The collector (collector.py) must be run separately: python collector.py
+
+Run this dashboard with:  streamlit run app.py
+"""
+
+import streamlit as st
+from datetime import datetime, timezone
+
+import config
+import storage
+
+# ── Page Configuration ───────────────────────────────────
+st.set_page_config(
+    page_title="NAPA Maritime DB Monitor",
+    page_icon="🚢",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# ── Custom CSS ───────────────────────────────────────────
+st.markdown("""
+<style>
+    /* Main title styling */
+    .main-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #00E5FF 0%, #00B8D4 50%, #0091EA 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.2rem;
+    }
+    .sub-title {
+        font-size: 1.1rem;
+        color: #8892B0;
+        margin-bottom: 2rem;
+    }
+
+    /* Status indicator */
+    .status-card {
+        background: linear-gradient(135deg, #112240 0%, #1a2d50 100%);
+        border: 1px solid #233554;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .status-online {
+        color: #64FFDA;
+        font-weight: 600;
+    }
+    .status-offline {
+        color: #FF6B6B;
+        font-weight: 600;
+    }
+
+    /* Feature cards */
+    .feature-card {
+        background: linear-gradient(135deg, #112240 0%, #1a2d50 100%);
+        border: 1px solid #233554;
+        border-radius: 12px;
+        padding: 1.5rem;
+        height: 100%;
+        transition: border-color 0.3s ease;
+    }
+    .feature-card:hover {
+        border-color: #00E5FF;
+    }
+    .feature-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    .feature-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #CCD6F6;
+        margin-bottom: 0.3rem;
+    }
+    .feature-desc {
+        font-size: 0.9rem;
+        color: #8892B0;
+    }
+
+    /* Info box */
+    .info-box {
+        background: rgba(0, 229, 255, 0.05);
+        border-left: 3px solid #00E5FF;
+        border-radius: 0 8px 8px 0;
+        padding: 1rem 1.2rem;
+        margin: 1rem 0;
+        color: #8892B0;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ── Sidebar ──────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("### 🚢 NAPA Monitor")
+    st.markdown("---")
+
+    # Collector status indicator
+    last_modified = storage.get_last_modified(config.SYSTEM_METRICS_FILE)
+    if last_modified:
+        age_seconds = (datetime.now(timezone.utc) - last_modified).total_seconds()
+        if age_seconds < config.COLLECTION_INTERVAL * 3:
+            st.markdown(
+                f'<span class="status-online">● Collector Running</span>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f'<span class="status-offline">● Collector Stale</span>',
+                unsafe_allow_html=True,
+            )
+        st.caption(f"Last data: {last_modified.strftime('%H:%M:%S UTC')}")
+    else:
+        st.markdown(
+            '<span class="status-offline">● No Data Yet</span>',
+            unsafe_allow_html=True,
+        )
+        st.caption("Run: `python collector.py`")
+
+    st.markdown("---")
+    st.markdown(
+        f"**DB:** `{config.DB_HOST}:{config.DB_PORT}`  \n"
+        f"**Database:** `{config.DB_NAME}`  \n"
+        f"**Interval:** `{config.COLLECTION_INTERVAL}s`  \n"
+        f"**AI Model:** `{config.LLM_MODEL}`"
+    )
+
+# ── Main Content ─────────────────────────────────────────
+st.markdown('<div class="main-title">NAPA Maritime DB Monitor</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="sub-title">Real-time PostgreSQL health monitoring with AI-powered insights for maritime fleet databases</div>',
+    unsafe_allow_html=True,
+)
+
+# ── Quick Status Row ─────────────────────────────────────
+col1, col2, col3 = st.columns(3)
+
+# Read latest metrics for the status cards
+latest_system = storage.read_latest(config.SYSTEM_METRICS_FILE)
+latest_conns = storage.read_latest(config.CONNECTION_METRICS_FILE)
+
+with col1:
+    if latest_system:
+        st.metric("Database Size", f"{latest_system.get('db_size_mb', '?')} MB")
+    else:
+        st.metric("Database Size", "—")
+
+with col2:
+    if latest_system:
+        ratio = latest_system.get("cache_hit_ratio", 0)
+        st.metric("Cache Hit Ratio", f"{ratio:.2%}" if isinstance(ratio, (int, float)) else "—")
+    else:
+        st.metric("Cache Hit Ratio", "—")
+
+with col3:
+    if latest_conns:
+        st.metric("Active Connections", latest_conns.get("active", "—"))
+    else:
+        st.metric("Active Connections", "—")
+
+st.markdown("")
+
+# ── Getting Started ──────────────────────────────────────
+st.markdown('<div class="info-box">', unsafe_allow_html=True)
+st.markdown("""
+**Quick Start** — Run these in two separate terminals:
+
+1. **Start the database:**  `docker compose up -d`
+2. **Start the collector:**  `python collector.py`
+3. **Start the dashboard:**  `streamlit run app.py`
+
+Use the sidebar pages to explore metrics, slow queries, trends, and AI insights.
+""")
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ── Feature Cards ────────────────────────────────────────
+st.markdown("### Dashboard Pages")
+st.markdown("")
+
+c1, c2, c3, c4 = st.columns(4)
+
+with c1:
+    st.markdown("""
+    <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-name">Overview</div>
+        <div class="feature-desc">Live metric cards, connection breakdown, and transaction rates</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c2:
+    st.markdown("""
+    <div class="feature-card">
+        <div class="feature-icon">🐢</div>
+        <div class="feature-name">Slow Queries</div>
+        <div class="feature-desc">Top slow queries with per-query AI analysis and optimization tips</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c3:
+    st.markdown("""
+    <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <div class="feature-name">Trends</div>
+        <div class="feature-desc">Historical charts for CPU, memory, connections, and cache ratios</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c4:
+    st.markdown("""
+    <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-name">AI Insights</div>
+        <div class="feature-desc">AI-powered health reports, anomaly detection, and monitoring alerts</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ── Footer ───────────────────────────────────────────────
+st.markdown("---")
+st.markdown(
+    '<div style="text-align: center; color: #4A5568; font-size: 0.85rem;">'
+    '🚢 NAPA Maritime Database Monitor — Built with Streamlit & OpenRouter AI'
+    '</div>',
+    unsafe_allow_html=True,
+)
