@@ -30,9 +30,11 @@ log = logging.getLogger(__name__)
 
 
 def _serialize(obj):
-    """Convert Decimal and other non-JSON types to float/str."""
+    """Convert Decimal and other non-JSON types to JSON-safe values."""
     if isinstance(obj, Decimal):
         return float(obj)
+    if isinstance(obj, (int, float, bool, type(None))):
+        return obj
     return str(obj)
 
 
