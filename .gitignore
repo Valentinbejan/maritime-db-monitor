@@ -1,0 +1,17 @@
+# Environments
+venv/
+env/
+
+# Secrets and Configs
+.env
+
+# Python Caches
+__pycache__/
+*.pyc
+
+# Local Data Storage
+data/metrics/
+*.jsonl
+
+# macOS system files (if you are on Mac)
+.DS_Store
