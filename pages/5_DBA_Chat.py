@@ -137,9 +137,39 @@ if client is None:
 
 # ── Render Chat History ──────────────────────────────────
 
+def _render_reasoning(reasoning_text):
+    """Render the reasoning dropdown HTML."""
+    reasoning_html = reasoning_text.replace("\n", "<br>")
+    st.markdown(
+        f'<details style="margin-bottom:1rem; padding:0.8rem; '
+        f'background:rgba(0,229,255,0.05); border-left:3px solid #00E5FF; '
+        f'border-radius:0 8px 8px 0;">'
+        f'<summary style="cursor:pointer; font-weight:600; color:#00E5FF;">'
+        f'🧠 Show AI Reasoning</summary>'
+        f'<div style="margin-top:0.8rem; color:#8892B0; font-size:0.9rem;">'
+        f'{reasoning_html}</div></details>',
+        unsafe_allow_html=True,
+    )
+
+def _render_usage(usage):
+    """Render token usage caption."""
+    if usage:
+        st.caption(
+            f"Tokens: {usage.get('total_tokens', '?')} total "
+            f"({usage.get('prompt_tokens', '?')} prompt + "
+            f"{usage.get('completion_tokens', '?')} completion)"
+        )
+
 for msg in st.session_state.chat_messages:
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+        if msg["role"] == "assistant":
+            # Render reasoning if saved
+            if msg.get("reasoning"):
+                _render_reasoning(msg["reasoning"])
+            st.markdown(msg["content"])
+            _render_usage(msg.get("usage"))
+        else:
+            st.markdown(msg["content"])
 
 
 # ── Auto-inject pending query from Slow Queries page ─────
@@ -164,9 +194,10 @@ if prompt:
     # Build the context-aware system prompt (refreshed each message for live metrics)
     system_prompt = _build_context_system_prompt()
 
-    # Build the full messages list for the API
+    # Build the full messages list for the API (only role + content for the API)
     api_messages = [{"role": "system", "content": system_prompt}]
-    api_messages.extend(st.session_state.chat_messages)
+    for m in st.session_state.chat_messages:
+        api_messages.append({"role": m["role"], "content": m["content"]})
 
     # Stream the response
     with st.chat_message("assistant"):
@@ -187,35 +218,25 @@ if prompt:
                 message_data = raw["choices"][0]["message"]
                 assistant_content = (message_data.get("content") or "").strip()
                 reasoning = message_data.get("reasoning")
+                usage = raw.get("usage", {})
 
                 # Show reasoning dropdown if present
                 if reasoning:
-                    reasoning_html = reasoning.replace("\n", "<br>")
-                    st.markdown(
-                        f'<details style="margin-bottom:1rem; padding:0.8rem; '
-                        f'background:rgba(0,229,255,0.05); border-left:3px solid #00E5FF; '
-                        f'border-radius:0 8px 8px 0;">'
-                        f'<summary style="cursor:pointer; font-weight:600; color:#00E5FF;">'
-                        f'🧠 Show AI Reasoning</summary>'
-                        f'<div style="margin-top:0.8rem; color:#8892B0; font-size:0.9rem;">'
-                        f'{reasoning_html}</div></details>',
-                        unsafe_allow_html=True,
-                    )
+                    _render_reasoning(reasoning)
 
                 st.markdown(assistant_content)
-
-                # Token usage
-                usage = raw.get("usage", {})
-                if usage:
-                    st.caption(
-                        f"Tokens: {usage.get('total_tokens', '?')} total "
-                        f"({usage.get('prompt_tokens', '?')} prompt + "
-                        f"{usage.get('completion_tokens', '?')} completion)"
-                    )
+                _render_usage(usage)
 
             except Exception as e:
                 assistant_content = f"❌ Error: {e}"
+                reasoning = None
+                usage = {}
                 st.error(assistant_content)
 
-    # Save assistant message to history
-    st.session_state.chat_messages.append({"role": "assistant", "content": assistant_content})
+    # Save assistant message with reasoning and usage to history
+    st.session_state.chat_messages.append({
+        "role": "assistant",
+        "content": assistant_content,
+        "reasoning": reasoning,
+        "usage": usage,
+    })
