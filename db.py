@@ -91,7 +91,7 @@ def fetch_database_stats():
 
 
 def fetch_slow_queries(limit=20):
-    """Return top slow queries from pg_stat_statements."""
+    """Return top slow queries from pg_stat_statements, filtering out tool and monitoring noise."""
     query = """
         SELECT
             query,
@@ -100,8 +100,42 @@ def fetch_slow_queries(limit=20):
             round(mean_exec_time::numeric, 2)   AS mean_exec_time_ms,
             rows
         FROM pg_stat_statements
-        WHERE query NOT LIKE '%%pg_stat_statements%%'
-          AND query NOT LIKE '%%pg_stat_activity%%'
+        WHERE
+            -- Exclude our own monitoring queries
+            query NOT LIKE '%%pg_stat_statements%%'
+            AND query NOT LIKE '%%pg_stat_activity%%'
+            AND query NOT LIKE '%%pg_stat_database%%'
+            AND query NOT LIKE '%%pg_stat_user_tables%%'
+            AND query NOT LIKE '%%information_schema%%'
+            AND query NOT LIKE '%%pg_indexes%%'
+
+            -- Exclude DBeaver / pgAdmin / tool catalog introspection
+            AND query NOT LIKE '%%pg_catalog%%'
+            AND query NOT LIKE '%%pg_namespace%%'
+            AND query NOT LIKE '%%pg_class%%'
+            AND query NOT LIKE '%%pg_attribute%%'
+            AND query NOT LIKE '%%pg_type%%'
+            AND query NOT LIKE '%%pg_constraint%%'
+            AND query NOT LIKE '%%pg_description%%'
+            AND query NOT LIKE '%%pg_proc%%'
+            AND query NOT LIKE '%%pg_extension%%'
+            AND query NOT LIKE '%%pg_database%%'
+            AND query NOT LIKE '%%pg_roles%%'
+            AND query NOT LIKE '%%pg_settings%%'
+            AND query NOT LIKE '%%pg_available_extensions%%'
+
+            -- Exclude transaction / session boilerplate
+            AND query NOT ILIKE '%%SHOW%%'
+            AND query NOT ILIKE 'SET%%'
+            AND query NOT ILIKE 'RESET%%'
+            AND query NOT ILIKE 'BEGIN%%'
+            AND query NOT ILIKE 'COMMIT%%'
+            AND query NOT ILIKE 'ROLLBACK%%'
+            AND query NOT ILIKE 'DEALLOCATE%%'
+
+            -- Exclude empty/utility queries
+            AND query NOT IN ('', ';')
+            AND calls > 0
         ORDER BY mean_exec_time DESC
         LIMIT %s;
     """
