@@ -102,7 +102,7 @@ def live_metrics():
                 latest_conn.get("idle", 0),
                 latest_conn.get("idle_in_tx", 0),
             ]
-            colors = ["#00E5FF", "#64FFDA", "#FF6B6B"]
+            colors = ["#00B4D8", "#FFB703", "#FF6B6B"]
 
             fig = go.Figure(data=[go.Pie(
                 labels=labels,
@@ -132,12 +132,12 @@ def live_metrics():
                 fig2 = go.Figure()
                 fig2.add_trace(go.Scatter(
                     x=df["timestamp"], y=df["active"],
-                    name="Active", line=dict(color="#00E5FF", width=2),
-                    fill="tozeroy", fillcolor="rgba(0,229,255,0.1)",
+                    name="Active", line=dict(color="#00B4D8", width=2),
+                    fill="tozeroy", fillcolor="rgba(0,180,216,0.1)",
                 ))
                 fig2.add_trace(go.Scatter(
                     x=df["timestamp"], y=df["idle"],
-                    name="Idle", line=dict(color="#64FFDA", width=2),
+                    name="Idle", line=dict(color="#FFB703", width=2),
                 ))
                 fig2.add_trace(go.Scatter(
                     x=df["timestamp"], y=df["idle_in_tx"],
