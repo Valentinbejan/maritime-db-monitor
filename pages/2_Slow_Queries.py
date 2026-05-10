@@ -78,6 +78,10 @@ st.dataframe(styled_df, use_container_width=True, hide_index=True, height=400)
 st.markdown("---")
 st.markdown("### 🔍 Query Details & AI Analysis")
 
+# Initialize session state for AI results
+if "ai_results" not in st.session_state:
+    st.session_state.ai_results = {}
+
 for i, q in enumerate(queries):
     query_text = q.get("query", "N/A")
     mean_ms = q.get("mean_exec_time_ms", 0)
@@ -103,8 +107,10 @@ for i, q in enumerate(queries):
         with stat_col4:
             st.metric("Rows", q.get("rows", 0))
 
-        # AI Analysis button
-        if st.button(f"🤖 Analyze with AI", key=f"analyze_q_{i}"):
+        # AI Analysis button — stores result in session_state
+        result_key = f"ai_result_{i}"
+
+        if st.button("🤖 Analyze with AI", key=f"analyze_q_{i}"):
             with st.spinner("🧠 AI is analyzing this query..."):
                 result = ai_analyzer.analyze_slow_query(
                     query_text=query_text,
@@ -115,17 +121,28 @@ for i, q in enumerate(queries):
                         "rows": q.get("rows"),
                     },
                 )
+            st.session_state.ai_results[result_key] = result
+
+        # Render stored result (persists across re-runs)
+        if result_key in st.session_state.ai_results:
+            result = st.session_state.ai_results[result_key]
 
             if result.get("error"):
                 st.error(result["error"])
             else:
-                # Show reasoning if available (checkbox instead of nested expander)
+                # Show reasoning in a collapsible HTML <details> block
                 if result.get("reasoning"):
-                    show_reasoning = st.checkbox(
-                        "🧠 Show AI Reasoning", key=f"reasoning_{i}", value=False
+                    reasoning_html = result["reasoning"].replace("\n", "<br>")
+                    st.markdown(
+                        f'<details style="margin-bottom:1rem; padding:0.8rem; '
+                        f'background:rgba(0,229,255,0.05); border-left:3px solid #00E5FF; '
+                        f'border-radius:0 8px 8px 0;">'
+                        f'<summary style="cursor:pointer; font-weight:600; color:#00E5FF;">'
+                        f'🧠 Show AI Reasoning (Internal Thought Process)</summary>'
+                        f'<div style="margin-top:0.8rem; color:#8892B0; font-size:0.9rem;">'
+                        f'{reasoning_html}</div></details>',
+                        unsafe_allow_html=True,
                     )
-                    if show_reasoning:
-                        st.info(result["reasoning"])
 
                 st.markdown("#### 💡 AI Recommendations")
                 st.markdown(result.get("content", "No response."))
@@ -134,3 +151,4 @@ for i, q in enumerate(queries):
                 usage = result.get("usage", {})
                 if usage:
                     st.caption(f"Tokens used: {usage.get('total_tokens', '?')}")
+
