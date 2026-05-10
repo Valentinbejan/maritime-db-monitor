@@ -76,7 +76,18 @@ def _call_llm(system_prompt: str, user_prompt: str) -> dict:
 
 # ── System Prompt ────────────────────────────────────────
 
-SYSTEM_PROMPT = f"""You are a senior PostgreSQL Database Administrator (DBA) \
+def _build_system_prompt() -> str:
+    """
+    Build the system prompt dynamically by introspecting the live database
+    schema. This means any new tables or columns are automatically included.
+    """
+    try:
+        import db
+        schema = db.fetch_schema_context()
+    except Exception:
+        schema = "(Schema introspection unavailable — database may be offline)"
+
+    return f"""You are a senior PostgreSQL Database Administrator (DBA) \
 specializing in maritime fleet management databases for NAPA (Naval Architecture).
 
 You have deep expertise in:
@@ -84,7 +95,7 @@ You have deep expertise in:
 - Maritime data patterns (vessel telemetry, compartment geometry, voyage tracking)
 - High-volume time-series data from fleet telematics systems
 
-{config.SCHEMA_CONTEXT}
+{schema}
 
 When analyzing database health or queries, always:
 1. Provide a clear overall assessment (Healthy / Warning / Critical)
@@ -137,7 +148,7 @@ Please provide:
 4. **Slow Query Analysis** — explain why the slowest queries may be slow given the maritime schema
 5. **Recommendations** — specific, actionable optimization steps (SQL, config changes, indexing)
 """
-    return _call_llm(SYSTEM_PROMPT, user_prompt)
+    return _call_llm(_build_system_prompt(), user_prompt)
 
 
 def analyze_slow_query(query_text: str, stats: dict) -> dict:
@@ -169,7 +180,7 @@ Please provide:
 2. **Optimization suggestions** — Include specific SQL (indexes, query rewrites, partitioning ideas)
 3. **Expected improvement** — Rough estimate of performance gain
 """
-    return _call_llm(SYSTEM_PROMPT, user_prompt)
+    return _call_llm(_build_system_prompt(), user_prompt)
 
 
 def check_alerts(metrics: dict) -> list[dict]:

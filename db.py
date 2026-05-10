@@ -127,3 +127,146 @@ def fetch_table_bloat():
         with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
             cur.execute(query)
             return cur.fetchall()
+
+
+def fetch_schema_context() -> str:
+    """
+    Dynamically introspect the database schema and return a human-readable
+    description for use in AI prompts. Queries information_schema and
+    pg_catalog so the app never needs hardcoded table definitions.
+    """
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
+
+            # 1. Get all user tables with row counts
+            cur.execute("""
+                SELECT
+                    t.table_name,
+                    s.n_live_tup AS approx_rows
+                FROM information_schema.tables t
+                LEFT JOIN pg_stat_user_tables s
+                    ON s.relname = t.table_name
+                WHERE t.table_schema = 'public'
+                  AND t.table_type = 'BASE TABLE'
+                ORDER BY t.table_name;
+            """)
+            tables = cur.fetchall()
+
+            # 2. Get all columns
+            cur.execute("""
+                SELECT
+                    table_name,
+                    column_name,
+                    data_type,
+                    character_maximum_length,
+                    numeric_precision,
+                    numeric_scale,
+                    is_nullable,
+                    column_default
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                ORDER BY table_name, ordinal_position;
+            """)
+            columns = cur.fetchall()
+
+            # 3. Get primary keys
+            cur.execute("""
+                SELECT
+                    tc.table_name,
+                    kcu.column_name
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                    ON tc.constraint_name = kcu.constraint_name
+                    AND tc.table_schema = kcu.table_schema
+                WHERE tc.constraint_type = 'PRIMARY KEY'
+                  AND tc.table_schema = 'public';
+            """)
+            pk_rows = cur.fetchall()
+            pks = {}
+            for row in pk_rows:
+                pks.setdefault(row["table_name"], []).append(row["column_name"])
+
+            # 4. Get foreign keys
+            cur.execute("""
+                SELECT
+                    tc.table_name,
+                    kcu.column_name,
+                    ccu.table_name  AS referenced_table,
+                    ccu.column_name AS referenced_column
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                    ON tc.constraint_name = kcu.constraint_name
+                    AND tc.table_schema = kcu.table_schema
+                JOIN information_schema.constraint_column_usage ccu
+                    ON tc.constraint_name = ccu.constraint_name
+                    AND tc.table_schema = ccu.table_schema
+                WHERE tc.constraint_type = 'FOREIGN KEY'
+                  AND tc.table_schema = 'public';
+            """)
+            fk_rows = cur.fetchall()
+            fks = {}
+            for row in fk_rows:
+                fks.setdefault(row["table_name"], {})[row["column_name"]] = (
+                    f"{row['referenced_table']}({row['referenced_column']})"
+                )
+
+            # 5. Get indexes
+            cur.execute("""
+                SELECT
+                    tablename,
+                    indexname,
+                    indexdef
+                FROM pg_indexes
+                WHERE schemaname = 'public'
+                ORDER BY tablename, indexname;
+            """)
+            idx_rows = cur.fetchall()
+            indexes = {}
+            for row in idx_rows:
+                indexes.setdefault(row["tablename"], []).append(row["indexname"])
+
+    # ── Build the schema description string ──────────────
+    cols_by_table = {}
+    for col in columns:
+        cols_by_table.setdefault(col["table_name"], []).append(col)
+
+    lines = ["Database Schema (dynamically introspected):", ""]
+
+    for table in tables:
+        tname = table["table_name"]
+        rows = table.get("approx_rows", "?")
+        lines.append(f"TABLE {tname}  (~{rows} rows)")
+
+        table_pks = set(pks.get(tname, []))
+        table_fks = fks.get(tname, {})
+
+        for col in cols_by_table.get(tname, []):
+            cname = col["column_name"]
+            dtype = col["data_type"]
+
+            # Enrich type with length/precision
+            if col["character_maximum_length"]:
+                dtype += f"({col['character_maximum_length']})"
+            elif col["numeric_precision"] and col["numeric_scale"]:
+                dtype += f"({col['numeric_precision']},{col['numeric_scale']})"
+
+            flags = []
+            if cname in table_pks:
+                flags.append("PK")
+            if cname in table_fks:
+                flags.append(f"FK→{table_fks[cname]}")
+            if col["is_nullable"] == "NO" and cname not in table_pks:
+                flags.append("NOT NULL")
+
+            flag_str = f"  [{', '.join(flags)}]" if flags else ""
+            lines.append(f"  {cname} {dtype}{flag_str}")
+
+        # Indexes for this table
+        table_idxs = indexes.get(tname, [])
+        if table_idxs:
+            lines.append(f"  Indexes: {', '.join(table_idxs)}")
+
+        lines.append("")
+
+    return "\n".join(lines).strip()
+

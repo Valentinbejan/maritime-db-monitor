@@ -30,23 +30,5 @@ SYSTEM_METRICS_FILE = os.path.join(DATA_DIR, "system_metrics.jsonl")
 CONNECTION_METRICS_FILE = os.path.join(DATA_DIR, "connection_metrics.jsonl")
 SLOW_QUERIES_FILE = os.path.join(DATA_DIR, "slow_queries.jsonl")
 
-# ── Maritime Schema Context (used in AI prompts) ─────────
-SCHEMA_CONTEXT = """
-Maritime Database Schema (NAPA Context):
-
-TABLE vessels:
-  id SERIAL PK, imo_number VARCHAR(10) UNIQUE, vessel_name VARCHAR(100),
-  vessel_type VARCHAR(50), year_built INT
-
-TABLE compartments:
-  id SERIAL PK, vessel_id INT FK→vessels, compartment_name VARCHAR(100),
-  fluid_type VARCHAR(50), volume_m3 DECIMAL(10,2), center_of_gravity_z DECIMAL(10,2)
-
-TABLE telemetry_logs:
-  id SERIAL PK, vessel_id INT FK→vessels, timestamp TIMESTAMPTZ,
-  latitude DECIMAL(9,6), longitude DECIMAL(9,6), speed_knots DECIMAL(5,2),
-  fuel_consumption_lph DECIMAL(6,2), wave_height_m DECIMAL(4,2)
-
-Indexes: idx_telemetry_vessel_id, idx_telemetry_timestamp
-~50,000 telemetry rows across 5 vessels over 30 days.
-""".strip()
+# NOTE: Schema context is no longer hardcoded here.
+# It is dynamically introspected from PostgreSQL via db.fetch_schema_context().
