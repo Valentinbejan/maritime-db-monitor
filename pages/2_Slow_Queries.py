@@ -8,8 +8,10 @@ import pandas as pd
 import config
 import storage
 import ai_analyzer
+import sidebar
 
 st.set_page_config(page_title="Slow Queries — NAPA Monitor", page_icon="🐢", layout="wide")
+sidebar.render_sidebar()
 
 st.markdown("# 🐢 Slow Queries")
 st.caption("Top slow queries from pg_stat_statements — click 'Analyze with AI' for optimization tips")

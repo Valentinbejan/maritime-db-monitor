@@ -15,9 +15,11 @@ import streamlit as st
 import config
 import storage
 import db
+import sidebar
 from openai import OpenAI
 
 st.set_page_config(page_title="DBA Chat — NAPA Monitor", page_icon="💬", layout="wide")
+sidebar.render_sidebar()
 
 st.markdown("# 💬 DBA Chat")
 st.caption("Context-aware database assistant — your schema and live metrics are injected automatically")
@@ -112,28 +114,10 @@ if "chat_context_prompt" not in st.session_state:
     st.session_state.chat_context_prompt = None
 
 
-# ── Sidebar: Context Info ────────────────────────────────
-
+# ── Chat-specific sidebar controls ───────────────────────
 with st.sidebar:
-    st.markdown("### 💬 Chat Context")
     st.markdown("---")
-
-    # Show what's injected
-    latest_sys = storage.read_latest(config.SYSTEM_METRICS_FILE)
-    latest_conn = storage.read_latest(config.CONNECTION_METRICS_FILE)
-
-    if latest_sys:
-        st.markdown(f"**CPU:** {latest_sys.get('cpu_percent', '?')}%")
-        st.markdown(f"**Memory:** {latest_sys.get('memory_percent', '?')}%")
-        st.markdown(f"**Cache Hit:** {latest_sys.get('cache_hit_ratio', '?')}")
-    if latest_conn:
-        st.markdown(f"**Connections:** {latest_conn.get('active', 0)} active, "
-                    f"{latest_conn.get('idle', 0)} idle "
-                    f"({latest_conn.get('total', 0)} total)")
-
-    st.markdown("---")
-    st.caption("Schema & metrics are silently injected into every message.")
-
+    st.caption("💬 Schema & metrics are injected into every message.")
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.chat_messages = []
         st.session_state.chat_context_prompt = None

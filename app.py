@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 
 import config
 import storage
+import sidebar
 
 # ── Page Configuration ───────────────────────────────────
 st.set_page_config(
@@ -21,10 +22,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ── Shared Sidebar ───────────────────────────────────────
+sidebar.render_sidebar()
+
 # ── Custom CSS ───────────────────────────────────────────
 st.markdown("""
 <style>
-    /* Main title styling */
     .main-title {
         font-size: 2.5rem;
         font-weight: 700;
@@ -38,25 +41,6 @@ st.markdown("""
         color: #8892B0;
         margin-bottom: 2rem;
     }
-
-    /* Status indicator */
-    .status-card {
-        background: linear-gradient(135deg, #112240 0%, #1a2d50 100%);
-        border: 1px solid #233554;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-    }
-    .status-online {
-        color: #64FFDA;
-        font-weight: 600;
-    }
-    .status-offline {
-        color: #FF6B6B;
-        font-weight: 600;
-    }
-
-    /* Feature cards */
     .feature-card {
         background: linear-gradient(135deg, #112240 0%, #1a2d50 100%);
         border: 1px solid #233554;
@@ -82,8 +66,6 @@ st.markdown("""
         font-size: 0.9rem;
         color: #8892B0;
     }
-
-    /* Info box */
     .info-box {
         background: rgba(0, 229, 255, 0.05);
         border-left: 3px solid #00E5FF;
@@ -94,41 +76,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-# ── Sidebar ──────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### 🚢 NAPA Monitor")
-    st.markdown("---")
-
-    # Collector status indicator
-    last_modified = storage.get_last_modified(config.SYSTEM_METRICS_FILE)
-    if last_modified:
-        age_seconds = (datetime.now(timezone.utc) - last_modified).total_seconds()
-        if age_seconds < config.COLLECTION_INTERVAL * 3:
-            st.markdown(
-                f'<span class="status-online">● Collector Running</span>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                f'<span class="status-offline">● Collector Stale</span>',
-                unsafe_allow_html=True,
-            )
-        st.caption(f"Last data: {last_modified.strftime('%H:%M:%S UTC')}")
-    else:
-        st.markdown(
-            '<span class="status-offline">● No Data Yet</span>',
-            unsafe_allow_html=True,
-        )
-        st.caption("Run: `python collector.py`")
-
-    st.markdown("---")
-    st.markdown(
-        f"**DB:** `{config.DB_HOST}:{config.DB_PORT}`  \n"
-        f"**Database:** `{config.DB_NAME}`  \n"
-        f"**Interval:** `{config.COLLECTION_INTERVAL}s`  \n"
-        f"**AI Model:** `{config.LLM_MODEL}`"
-    )
 
 # ── Main Content ─────────────────────────────────────────
 st.markdown('<div class="main-title">NAPA Maritime DB Monitor</div>', unsafe_allow_html=True)

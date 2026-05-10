@@ -10,8 +10,10 @@ from datetime import datetime, timezone
 
 import config
 import storage
+import sidebar
 
 st.set_page_config(page_title="Overview — NAPA Monitor", page_icon="📊", layout="wide")
+sidebar.render_sidebar()
 
 # ── Custom CSS ───────────────────────────────────────────
 st.markdown("""

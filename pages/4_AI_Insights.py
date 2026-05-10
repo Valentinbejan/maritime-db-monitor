@@ -7,8 +7,10 @@ import streamlit as st
 import config
 import storage
 import ai_analyzer
+import sidebar
 
 st.set_page_config(page_title="AI Insights — NAPA Monitor", page_icon="🤖", layout="wide")
+sidebar.render_sidebar()
 st.markdown("# 🤖 AI Insights")
 st.caption("AI-powered health analysis and monitoring alerts via OpenRouter")
 

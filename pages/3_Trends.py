@@ -9,8 +9,10 @@ from datetime import datetime, timedelta, timezone
 
 import config
 import storage
+import sidebar
 
 st.set_page_config(page_title="Trends — NAPA Monitor", page_icon="📈", layout="wide")
+sidebar.render_sidebar()
 st.markdown("# 📈 Historical Trends")
 st.caption("Monitor database and system performance over time")
 
