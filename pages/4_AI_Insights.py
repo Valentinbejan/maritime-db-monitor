@@ -111,6 +111,10 @@ if not api_ready:
         "to enable AI analysis. Get a free key at [openrouter.ai](https://openrouter.ai)."
     )
 
+# Initialize session state for the health report
+if "health_report" not in st.session_state:
+    st.session_state.health_report = None
+
 col_btn, col_model = st.columns([1, 2])
 with col_btn:
     generate = st.button(
@@ -125,14 +129,28 @@ with col_model:
 if generate:
     with st.spinner("🧠 AI is analyzing your database — this may take 15-30 seconds..."):
         result = ai_analyzer.generate_health_report(ai_metrics)
+    st.session_state.health_report = result
+
+# Render stored result (persists across re-runs)
+if st.session_state.health_report is not None:
+    result = st.session_state.health_report
 
     if result.get("error"):
         st.error(result["error"])
     else:
-        # Show reasoning if available
+        # Show reasoning in a collapsible HTML <details> block (same as Slow Queries)
         if result.get("reasoning"):
-            with st.expander("🧠 AI Reasoning (Internal Thought Process)", expanded=False):
-                st.markdown(result["reasoning"])
+            reasoning_html = result["reasoning"].replace("\n", "<br>")
+            st.markdown(
+                f'<details style="margin-bottom:1rem; padding:0.8rem; '
+                f'background:rgba(0,229,255,0.05); border-left:3px solid #00E5FF; '
+                f'border-radius:0 8px 8px 0;">'
+                f'<summary style="cursor:pointer; font-weight:600; color:#00E5FF;">'
+                f'🧠 Show AI Reasoning (Internal Thought Process)</summary>'
+                f'<div style="margin-top:0.8rem; color:#8892B0; font-size:0.9rem;">'
+                f'{reasoning_html}</div></details>',
+                unsafe_allow_html=True,
+            )
 
         st.markdown("---")
         st.markdown(result.get("content", "No response generated."))
