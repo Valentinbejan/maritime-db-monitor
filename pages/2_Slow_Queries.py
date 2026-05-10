@@ -109,10 +109,22 @@ for i, q in enumerate(queries):
         with stat_col4:
             st.metric("Rows", q.get("rows", 0))
 
-        # AI Analysis button — stores result in session_state
+        # Action buttons
         result_key = f"ai_result_{i}"
+        btn_col1, btn_col2 = st.columns(2)
 
-        if st.button("🤖 Analyze with AI", key=f"analyze_q_{i}"):
+        with btn_col1:
+            analyze_clicked = st.button(
+                "🤖 Analyze with AI", key=f"analyze_q_{i}", use_container_width=True
+            )
+
+        with btn_col2:
+            discuss_clicked = st.button(
+                "💬 Discuss in Chat", key=f"discuss_q_{i}", use_container_width=True
+            )
+
+        # Handle Analyze with AI
+        if analyze_clicked:
             with st.spinner("🧠 AI is analyzing this query..."):
                 result = ai_analyzer.analyze_slow_query(
                     query_text=query_text,
@@ -124,6 +136,21 @@ for i, q in enumerate(queries):
                     },
                 )
             st.session_state.ai_results[result_key] = result
+
+        # Handle Discuss in Chat — store query context and navigate
+        if discuss_clicked:
+            chat_msg = (
+                f"I'd like to discuss this slow query from our database:\n\n"
+                f"```sql\n{query_text}\n```\n\n"
+                f"**Execution Statistics:**\n"
+                f"- Calls: {q.get('calls', 'N/A')}\n"
+                f"- Mean Execution Time: {q.get('mean_exec_time_ms', 'N/A')} ms\n"
+                f"- Total Execution Time: {q.get('total_exec_time_ms', 'N/A')} ms\n"
+                f"- Rows Returned: {q.get('rows', 'N/A')}\n\n"
+                f"Why might this query be slow, and how can I optimize it?"
+            )
+            st.session_state.chat_pending_query = chat_msg
+            st.switch_page("pages/5_DBA_Chat.py")
 
         # Render stored result (persists across re-runs)
         if result_key in st.session_state.ai_results:
@@ -153,4 +180,3 @@ for i, q in enumerate(queries):
                 usage = result.get("usage", {})
                 if usage:
                     st.caption(f"Tokens used: {usage.get('total_tokens', '?')}")
-

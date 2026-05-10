@@ -142,9 +142,19 @@ for msg in st.session_state.chat_messages:
         st.markdown(msg["content"])
 
 
+# ── Auto-inject pending query from Slow Queries page ─────
+
+pending = st.session_state.pop("chat_pending_query", None)
+
 # ── Chat Input ───────────────────────────────────────────
 
-if prompt := st.chat_input("Ask about your database — schema, performance, queries..."):
+prompt = st.chat_input("Ask about your database — schema, performance, queries...")
+
+# Use the pending query if no manual input
+if pending and not prompt:
+    prompt = pending
+
+if prompt:
 
     # Display user message
     with st.chat_message("user"):
