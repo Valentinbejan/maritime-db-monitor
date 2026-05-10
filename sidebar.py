@@ -16,6 +16,28 @@ import storage
 def render_sidebar():
     """Render the shared sidebar. Call this from every page."""
 
+    # CSS: Keep page nav always expanded, hide the collapse arrow
+    st.markdown("""
+    <style>
+        /* Hide the collapse toggle arrow on sidebar navigation */
+        [data-testid="stSidebarNav"] summary {
+            display: none !important;
+        }
+        /* Ensure the page list is always visible and not clipped */
+        [data-testid="stSidebarNav"] ul {
+            display: block !important;
+            max-height: none !important;
+            overflow: visible !important;
+        }
+        [data-testid="stSidebarNav"] details {
+            overflow: visible !important;
+        }
+        [data-testid="stSidebarNav"] details[open] > ul {
+            max-height: none !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
     with st.sidebar:
         st.markdown("### 🚢 NAPA Monitor")
         st.markdown("---")
