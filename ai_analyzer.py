@@ -59,7 +59,7 @@ def _call_llm(system_prompt: str, user_prompt: str) -> dict:
         message_data = raw["choices"][0]["message"]
 
         return {
-            "content": message_data.get("content", "").strip(),
+            "content": (message_data.get("content") or "").strip(),
             "reasoning": message_data.get("reasoning"),
             "usage": raw.get("usage", {}),
             "error": None,

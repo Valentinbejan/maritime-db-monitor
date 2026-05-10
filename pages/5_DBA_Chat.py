@@ -175,7 +175,7 @@ if prompt := st.chat_input("Ask about your database — schema, performance, que
 
                 raw = response.model_dump()
                 message_data = raw["choices"][0]["message"]
-                assistant_content = message_data.get("content", "").strip()
+                assistant_content = (message_data.get("content") or "").strip()
                 reasoning = message_data.get("reasoning")
 
                 # Show reasoning dropdown if present
