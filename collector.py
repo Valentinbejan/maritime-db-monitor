@@ -105,7 +105,7 @@ def collect_connection_metrics():
 def collect_slow_queries():
     """Collect top slow queries from pg_stat_statements."""
     try:
-        queries = db.fetch_slow_queries(limit=20)
+        queries = db.fetch_slow_queries(limit=100)
         record = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "queries": [_to_plain_dict(q) for q in queries],

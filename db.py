@@ -124,7 +124,7 @@ def fetch_database_stats():
             return cur.fetchone()
 
 
-def fetch_slow_queries(limit=20):
+def fetch_slow_queries(limit=100):
     """Return top slow queries from pg_stat_statements, filtering out tool and monitoring noise."""
     query = """
         SELECT
