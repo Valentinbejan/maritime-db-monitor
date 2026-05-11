@@ -168,15 +168,30 @@ def render_sidebar():
             '<span style="color:#8892B0; font-weight:600; font-size:0.85rem;">⚙️ Admin</span>',
             unsafe_allow_html=True,
         )
+
+        if "wipe_confirm" not in st.session_state:
+            st.session_state.wipe_confirm = False
+
         if st.button("🗑️ Wipe All Metrics Data", use_container_width=True):
-            import glob, os
-            pattern = os.path.join(config.DATA_DIR, "*.jsonl")
-            deleted = 0
-            for f in glob.glob(pattern):
-                os.remove(f)
-                deleted += 1
-            st.success(f"✅ Deleted {deleted} data file(s). Dashboard reset!")
-            st.rerun()
+            st.session_state.wipe_confirm = True
+
+        if st.session_state.wipe_confirm:
+            confirm = st.text_input(
+                "Type **DELETE** to confirm:", key="wipe_input",
+                placeholder="DELETE",
+            )
+            if confirm == "DELETE":
+                import glob, os
+                pattern = os.path.join(config.DATA_DIR, "*.jsonl")
+                deleted = 0
+                for f in glob.glob(pattern):
+                    os.remove(f)
+                    deleted += 1
+                st.session_state.wipe_confirm = False
+                st.success(f"✅ Deleted {deleted} data file(s). Dashboard reset!")
+                st.rerun()
+            elif confirm:
+                st.error("❌ Type exactly `DELETE` to confirm.")
 
         st.markdown("---")
         st.markdown(
