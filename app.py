@@ -128,7 +128,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown("### Dashboard Pages")
 st.markdown("")
 
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3 = st.columns(3)
 
 with c1:
     st.markdown("""
@@ -157,12 +157,33 @@ with c3:
     </div>
     """, unsafe_allow_html=True)
 
+st.markdown("")
+c4, c5, c6 = st.columns(3)
+
 with c4:
     st.markdown("""
     <div class="feature-card">
         <div class="feature-icon">🤖</div>
         <div class="feature-name">AI Insights</div>
         <div class="feature-desc">AI-powered health reports, anomaly detection, and monitoring alerts</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c5:
+    st.markdown("""
+    <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <div class="feature-name">DBA Chat</div>
+        <div class="feature-desc">Context-aware AI chat with live schema and metrics injected</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c6:
+    st.markdown("""
+    <div class="feature-card">
+        <div class="feature-icon">🗂️</div>
+        <div class="feature-name">Index Health</div>
+        <div class="feature-desc">Missing & unused index detection with AI optimization advice</div>
     </div>
     """, unsafe_allow_html=True)
 

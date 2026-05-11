@@ -304,3 +304,70 @@ def fetch_schema_context() -> str:
 
     return "\n".join(lines).strip()
 
+
+def fetch_missing_indexes():
+    """
+    Detect tables that likely need additional indexes.
+
+    Returns tables with a high ratio of sequential scans vs index scans,
+    indicating queries are doing full table scans instead of using indexes.
+    Only includes tables with a meaningful number of rows and scans.
+    """
+    query = """
+        SELECT
+            schemaname,
+            relname                                          AS table_name,
+            n_live_tup                                       AS row_estimate,
+            seq_scan,
+            idx_scan,
+            seq_tup_read,
+            CASE WHEN (seq_scan + idx_scan) > 0
+                 THEN round(100.0 * seq_scan / (seq_scan + idx_scan), 1)
+                 ELSE 0
+            END                                              AS seq_scan_pct,
+            pg_size_pretty(pg_relation_size(relid))          AS table_size
+        FROM pg_stat_user_tables
+        WHERE n_live_tup > 500
+          AND (seq_scan + idx_scan) > 0
+          AND seq_scan > idx_scan
+        ORDER BY seq_tup_read DESC
+        LIMIT 20;
+    """
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
+            cur.execute(query)
+            return cur.fetchall()
+
+
+def fetch_unused_indexes():
+    """
+    Detect indexes that exist but are rarely or never used.
+
+    These waste disk space and slow down writes (INSERT/UPDATE/DELETE)
+    because PostgreSQL must maintain them. Primary key and unique indexes
+    are excluded since they enforce constraints.
+    """
+    query = """
+        SELECT
+            s.schemaname,
+            s.relname                                        AS table_name,
+            s.indexrelname                                   AS index_name,
+            s.idx_scan,
+            s.idx_tup_read,
+            s.idx_tup_fetch,
+            pg_size_pretty(pg_relation_size(s.indexrelid))   AS index_size,
+            pg_relation_size(s.indexrelid)                   AS index_size_bytes,
+            i.indisunique                                    AS is_unique,
+            i.indisprimary                                   AS is_primary
+        FROM pg_stat_user_indexes s
+        JOIN pg_index i ON s.indexrelid = i.indexrelid
+        WHERE s.idx_scan < 50
+          AND NOT i.indisprimary
+          AND NOT i.indisunique
+        ORDER BY pg_relation_size(s.indexrelid) DESC
+        LIMIT 20;
+    """
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
+            cur.execute(query)
+            return cur.fetchall()

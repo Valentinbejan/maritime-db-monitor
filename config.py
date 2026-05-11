@@ -29,6 +29,7 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "metrics")
 SYSTEM_METRICS_FILE = os.path.join(DATA_DIR, "system_metrics.jsonl")
 CONNECTION_METRICS_FILE = os.path.join(DATA_DIR, "connection_metrics.jsonl")
 SLOW_QUERIES_FILE = os.path.join(DATA_DIR, "slow_queries.jsonl")
+INDEX_HEALTH_FILE = os.path.join(DATA_DIR, "index_health.jsonl")
 
 # NOTE: Schema context is no longer hardcoded here.
 # It is dynamically introspected from PostgreSQL via db.fetch_schema_context().

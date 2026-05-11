@@ -118,6 +118,31 @@ def collect_slow_queries():
         log.error("Failed to collect slow queries: %s", e)
 
 
+def collect_index_health():
+    """Collect missing and unused index data."""
+    try:
+        missing = db.fetch_missing_indexes()
+        unused = db.fetch_unused_indexes()
+
+        record = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "missing_indexes": [_to_plain_dict(m) for m in missing],
+            "unused_indexes": [_to_plain_dict(u) for u in unused],
+        }
+
+        storage.append_metric(config.INDEX_HEALTH_FILE, record)
+        storage.rotate_if_needed(config.INDEX_HEALTH_FILE)
+
+        total_waste = sum(u.get("index_size_bytes", 0) for u in unused)
+        waste_mb = round(total_waste / (1024 * 1024), 2) if total_waste else 0
+        log.info(
+            "Index health: %d missing, %d unused (%.2f MB wasted)",
+            len(missing), len(unused), waste_mb,
+        )
+    except Exception as e:
+        log.error("Failed to collect index health: %s", e)
+
+
 # ── Main Loop ────────────────────────────────────────────
 
 def main():
@@ -136,6 +161,7 @@ def main():
             collect_system_metrics()
             collect_connection_metrics()
             collect_slow_queries()
+            collect_index_health()
             log.info("── Done. Sleeping %ds ──\n", interval)
             time.sleep(interval)
     except KeyboardInterrupt:
