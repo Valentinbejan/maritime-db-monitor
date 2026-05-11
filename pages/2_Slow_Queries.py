@@ -9,6 +9,7 @@ import config
 import storage
 import ai_analyzer
 import sidebar
+import ui_helpers
 
 st.set_page_config(page_title="Slow Queries — NAPA Monitor", page_icon="🐢", layout="wide")
 sidebar.render_sidebar()
@@ -159,24 +160,11 @@ for i, q in enumerate(queries):
             if result.get("error"):
                 st.error(result["error"])
             else:
-                # Show reasoning in a collapsible HTML <details> block
                 if result.get("reasoning"):
-                    reasoning_html = result["reasoning"].replace("\n", "<br>")
-                    st.markdown(
-                        f'<details style="margin-bottom:1rem; padding:0.8rem; '
-                        f'background:rgba(0,229,255,0.05); border-left:3px solid #00E5FF; '
-                        f'border-radius:0 8px 8px 0;">'
-                        f'<summary style="cursor:pointer; font-weight:600; color:#00E5FF;">'
-                        f'🧠 Show AI Reasoning (Internal Thought Process)</summary>'
-                        f'<div style="margin-top:0.8rem; color:#8892B0; font-size:0.9rem;">'
-                        f'{reasoning_html}</div></details>',
-                        unsafe_allow_html=True,
-                    )
+                    ui_helpers.render_reasoning_dropdown(result["reasoning"])
 
                 st.markdown("#### 💡 AI Recommendations")
                 st.markdown(result.get("content", "No response."))
 
-                # Token usage
-                usage = result.get("usage", {})
-                if usage:
-                    st.caption(f"Tokens used: {usage.get('total_tokens', '?')}")
+                ui_helpers.render_token_usage(result.get("usage", {}))
+

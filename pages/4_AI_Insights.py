@@ -8,6 +8,7 @@ import config
 import storage
 import ai_analyzer
 import sidebar
+import ui_helpers
 
 st.set_page_config(page_title="AI Insights — NAPA Monitor", page_icon="🤖", layout="wide")
 sidebar.render_sidebar()
@@ -102,10 +103,7 @@ if latest_sys and latest_sys.get("table_bloat"):
     ai_metrics["table_bloat"] = latest_sys["table_bloat"]
 
 # Model info
-api_ready = (
-    config.OPENROUTER_API_KEY
-    and config.OPENROUTER_API_KEY != "your_openrouter_api_key_here"
-)
+api_ready = config.is_api_ready()
 
 if not api_ready:
     st.info(
@@ -140,19 +138,8 @@ if st.session_state.health_report is not None:
     if result.get("error"):
         st.error(result["error"])
     else:
-        # Show reasoning in a collapsible HTML <details> block (same as Slow Queries)
         if result.get("reasoning"):
-            reasoning_html = result["reasoning"].replace("\n", "<br>")
-            st.markdown(
-                f'<details style="margin-bottom:1rem; padding:0.8rem; '
-                f'background:rgba(0,229,255,0.05); border-left:3px solid #00E5FF; '
-                f'border-radius:0 8px 8px 0;">'
-                f'<summary style="cursor:pointer; font-weight:600; color:#00E5FF;">'
-                f'🧠 Show AI Reasoning (Internal Thought Process)</summary>'
-                f'<div style="margin-top:0.8rem; color:#8892B0; font-size:0.9rem;">'
-                f'{reasoning_html}</div></details>',
-                unsafe_allow_html=True,
-            )
+            ui_helpers.render_reasoning_dropdown(result["reasoning"])
 
         st.markdown("---")
         st.markdown(result.get("content", "No response generated."))
@@ -161,13 +148,7 @@ if st.session_state.health_report is not None:
         usage = result.get("usage", {})
         if usage:
             st.markdown("---")
-            tc1, tc2, tc3 = st.columns(3)
-            with tc1:
-                st.caption(f"Prompt tokens: {usage.get('prompt_tokens', '?')}")
-            with tc2:
-                st.caption(f"Completion tokens: {usage.get('completion_tokens', '?')}")
-            with tc3:
-                st.caption(f"Total tokens: {usage.get('total_tokens', '?')}")
+            ui_helpers.render_token_usage(usage, layout="columns")
 
 # ── Footer ───────────────────────────────────────────────
 st.markdown("---")
@@ -176,3 +157,4 @@ st.caption(
     "treated as suggestions, not definitive diagnoses. Always verify recommendations "
     "before applying to production systems."
 )
+

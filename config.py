@@ -32,3 +32,8 @@ SLOW_QUERIES_FILE = os.path.join(DATA_DIR, "slow_queries.jsonl")
 
 # NOTE: Schema context is no longer hardcoded here.
 # It is dynamically introspected from PostgreSQL via db.fetch_schema_context().
+
+
+def is_api_ready() -> bool:
+    """Return True if the OpenRouter API key is configured and not a placeholder."""
+    return bool(OPENROUTER_API_KEY) and OPENROUTER_API_KEY != "your_openrouter_api_key_here"
