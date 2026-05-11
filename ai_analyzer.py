@@ -243,6 +243,49 @@ Please provide:
     return _call_llm(build_system_prompt(), user_prompt)
 
 
+def analyze_explain_plan(query_text: str, stats: dict, explain_plan: list) -> dict:
+    """
+    Analyze a slow query using its real EXPLAIN ANALYZE execution plan.
+
+    Args:
+        query_text: The SQL query text.
+        stats: dict with 'calls', 'mean_exec_time_ms', 'total_exec_time_ms', 'rows'.
+        explain_plan: The JSON output from EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON).
+
+    Returns:
+        dict with 'content', 'reasoning', 'usage', 'error'.
+    """
+    import json
+    plan_json = json.dumps(explain_plan, indent=2)
+
+    user_prompt = f"""Analyze this slow PostgreSQL query from our maritime fleet database using its **real execution plan**.
+
+## Query
+```sql
+{query_text}
+```
+
+## Execution Statistics (from pg_stat_statements)
+- Total Calls: {stats.get('calls', 'N/A')}
+- Mean Execution Time: {stats.get('mean_exec_time_ms', 'N/A')} ms
+- Total Execution Time: {stats.get('total_exec_time_ms', 'N/A')} ms
+- Rows Returned: {stats.get('rows', 'N/A')}
+
+## EXPLAIN ANALYZE Output (JSON)
+```json
+{plan_json}
+```
+
+Using the execution plan above, provide a **precise** analysis:
+1. **Plan Breakdown** — Walk through each node in the plan (Seq Scan, Index Scan, Hash Join, etc.) and explain what PostgreSQL is doing and how long each step takes
+2. **Bottleneck Identification** — Which plan node is the slowest? Why? Reference exact row counts and timing from the plan
+3. **Optimization Recommendations** — Specific CREATE INDEX, query rewrite, or config changes with SQL. Base these on what you see in the plan, not guesses
+4. **Buffer Analysis** — Comment on shared/local hit vs read ratios if available
+5. **Expected Improvement** — Estimate how the plan would change after your recommended optimizations
+"""
+    return _call_llm(build_system_prompt(), user_prompt)
+
+
 def check_alerts(metrics: dict) -> list[dict]:
     """
     Check metrics against configurable thresholds and return alert dicts.

@@ -51,6 +51,40 @@ def close_pool():
 
 # ── Query Helpers ────────────────────────────────────────
 
+import re
+
+
+def run_explain(query_text: str) -> dict:
+    """
+    Run EXPLAIN (ANALYZE, FORMAT JSON) on a query and return the plan.
+
+    Handles parameterized queries from pg_stat_statements by replacing
+    $1, $2, etc. with NULL so PostgreSQL can parse them.
+
+    Runs inside a transaction that is ALWAYS rolled back, so it's safe
+    even for INSERT/UPDATE/DELETE queries (EXPLAIN ANALYZE executes them
+    but the rollback undoes any side effects).
+
+    Returns:
+        dict with 'plan' (the JSON execution plan) and 'error' (if any).
+    """
+    # Replace $1, $2 etc. with NULL for EXPLAIN compatibility
+    sanitized = re.sub(r'\$\d+', 'NULL', query_text)
+
+    with get_connection() as conn:
+        try:
+            conn.autocommit = False
+            with conn.cursor() as cur:
+                cur.execute(f"EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {sanitized}")
+                plan = cur.fetchone()[0]
+            # Always rollback — we never want EXPLAIN ANALYZE to persist side effects
+            conn.rollback()
+            return {"plan": plan, "error": None}
+        except Exception as e:
+            conn.rollback()
+            return {"plan": None, "error": str(e)}
+
+
 def fetch_active_connections():
     """Return connection counts grouped by state."""
     query = """

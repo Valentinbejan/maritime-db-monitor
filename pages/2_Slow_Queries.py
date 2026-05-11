@@ -7,6 +7,7 @@ import pandas as pd
 
 import config
 import storage
+import db
 import ai_analyzer
 import sidebar
 import ui_helpers
@@ -112,7 +113,8 @@ for i, q in enumerate(queries):
 
         # Action buttons
         result_key = f"ai_result_{i}"
-        btn_col1, btn_col2 = st.columns(2)
+        explain_key = f"explain_result_{i}"
+        btn_col1, btn_col2, btn_col3 = st.columns(3)
 
         with btn_col1:
             analyze_clicked = st.button(
@@ -120,23 +122,48 @@ for i, q in enumerate(queries):
             )
 
         with btn_col2:
+            explain_clicked = st.button(
+                "🔬 EXPLAIN AI Analysis", key=f"explain_q_{i}", use_container_width=True
+            )
+
+        with btn_col3:
             discuss_clicked = st.button(
                 "💬 Discuss in Chat", key=f"discuss_q_{i}", use_container_width=True
             )
+
+        query_stats = {
+            "calls": q.get("calls"),
+            "mean_exec_time_ms": q.get("mean_exec_time_ms"),
+            "total_exec_time_ms": q.get("total_exec_time_ms"),
+            "rows": q.get("rows"),
+        }
 
         # Handle Analyze with AI
         if analyze_clicked:
             with st.spinner("🧠 AI is analyzing this query..."):
                 result = ai_analyzer.analyze_slow_query(
-                    query_text=query_text,
-                    stats={
-                        "calls": q.get("calls"),
-                        "mean_exec_time_ms": q.get("mean_exec_time_ms"),
-                        "total_exec_time_ms": q.get("total_exec_time_ms"),
-                        "rows": q.get("rows"),
-                    },
+                    query_text=query_text, stats=query_stats,
                 )
             st.session_state.ai_results[result_key] = result
+
+        # Handle EXPLAIN AI Analysis
+        if explain_clicked:
+            with st.spinner("🔬 Running EXPLAIN ANALYZE on the database..."):
+                explain_result = db.run_explain(query_text)
+
+            if explain_result.get("error"):
+                st.session_state.ai_results[explain_key] = {
+                    "error": f"EXPLAIN failed: {explain_result['error']}",
+                    "content": None, "reasoning": None, "usage": {},
+                }
+            else:
+                with st.spinner("🧠 AI is analyzing the execution plan..."):
+                    result = ai_analyzer.analyze_explain_plan(
+                        query_text=query_text,
+                        stats=query_stats,
+                        explain_plan=explain_result["plan"],
+                    )
+                st.session_state.ai_results[explain_key] = result
 
         # Handle Discuss in Chat — store query context and navigate
         if discuss_clicked:
@@ -153,7 +180,7 @@ for i, q in enumerate(queries):
             st.session_state.chat_pending_query = chat_msg
             st.switch_page("pages/5_DBA_Chat.py")
 
-        # Render stored result (persists across re-runs)
+        # Render stored AI result (persists across re-runs)
         if result_key in st.session_state.ai_results:
             result = st.session_state.ai_results[result_key]
 
@@ -165,6 +192,18 @@ for i, q in enumerate(queries):
 
                 st.markdown("#### 💡 AI Recommendations")
                 st.markdown(result.get("content", "No response."))
-
                 ui_helpers.render_token_usage(result.get("usage", {}))
 
+        # Render stored EXPLAIN result (separate from basic AI)
+        if explain_key in st.session_state.ai_results:
+            result = st.session_state.ai_results[explain_key]
+
+            if result.get("error"):
+                st.error(result["error"])
+            else:
+                if result.get("reasoning"):
+                    ui_helpers.render_reasoning_dropdown(result["reasoning"])
+
+                st.markdown("#### 🔬 EXPLAIN Plan Analysis")
+                st.markdown(result.get("content", "No response."))
+                ui_helpers.render_token_usage(result.get("usage", {}))
