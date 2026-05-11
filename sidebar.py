@@ -162,6 +162,23 @@ def render_sidebar():
                 st.info("No metrics collected yet.")
 
         st.markdown("---")
+
+        # ── Admin (always visible) ────────────────────────
+        st.markdown(
+            '<span style="color:#8892B0; font-weight:600; font-size:0.85rem;">⚙️ Admin</span>',
+            unsafe_allow_html=True,
+        )
+        if st.button("🗑️ Wipe All Metrics Data", use_container_width=True):
+            import glob, os
+            pattern = os.path.join(config.DATA_DIR, "*.jsonl")
+            deleted = 0
+            for f in glob.glob(pattern):
+                os.remove(f)
+                deleted += 1
+            st.success(f"✅ Deleted {deleted} data file(s). Dashboard reset!")
+            st.rerun()
+
+        st.markdown("---")
         st.markdown(
             '<div style="text-align:center; color:#4A5568; font-size:0.8rem;">'
             '🚢 NAPA Maritime DB Monitor</div>',
