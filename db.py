@@ -371,3 +371,96 @@ def fetch_unused_indexes():
         with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
             cur.execute(query)
             return cur.fetchall()
+
+
+def fetch_autovacuum_activity():
+    """
+    Return currently running autovacuum workers.
+    Shows which tables are being vacuumed right now and for how long.
+    """
+    query = """
+        SELECT
+            pid,
+            query,
+            state,
+            wait_event_type,
+            wait_event,
+            now() - xact_start                              AS duration,
+            now() - query_start                             AS query_duration
+        FROM pg_stat_activity
+        WHERE query ILIKE '%%autovacuum%%'
+          AND state != 'idle'
+        ORDER BY xact_start;
+    """
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
+            cur.execute(query)
+            return cur.fetchall()
+
+
+def fetch_autovacuum_stats():
+    """
+    Return per-table vacuum and analyze stats.
+
+    Shows when each table was last vacuumed/analyzed (both manual and auto),
+    dead tuple counts, and how long ago the last maintenance ran.
+    Tables that haven't been vacuumed recently are potential problems.
+    """
+    query = """
+        SELECT
+            schemaname,
+            relname                                          AS table_name,
+            n_live_tup,
+            n_dead_tup,
+            CASE WHEN n_live_tup > 0
+                 THEN round(100.0 * n_dead_tup / n_live_tup, 2)
+                 ELSE 0
+            END                                              AS dead_pct,
+            last_vacuum,
+            last_autovacuum,
+            last_analyze,
+            last_autoanalyze,
+            vacuum_count,
+            autovacuum_count,
+            analyze_count,
+            autoanalyze_count,
+            GREATEST(last_vacuum, last_autovacuum)           AS last_any_vacuum,
+            GREATEST(last_analyze, last_autoanalyze)         AS last_any_analyze,
+            EXTRACT(EPOCH FROM (now() - GREATEST(last_vacuum, last_autovacuum)))
+                                                             AS seconds_since_vacuum,
+            EXTRACT(EPOCH FROM (now() - GREATEST(last_analyze, last_autoanalyze)))
+                                                             AS seconds_since_analyze
+        FROM pg_stat_user_tables
+        ORDER BY n_dead_tup DESC;
+    """
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
+            cur.execute(query)
+            return cur.fetchall()
+
+
+def fetch_autovacuum_settings():
+    """
+    Return key autovacuum configuration parameters.
+    Helps diagnose why autovacuum might not be running as expected.
+    """
+    query = """
+        SELECT name, setting, unit, short_desc
+        FROM pg_settings
+        WHERE name IN (
+            'autovacuum',
+            'autovacuum_max_workers',
+            'autovacuum_naptime',
+            'autovacuum_vacuum_threshold',
+            'autovacuum_vacuum_scale_factor',
+            'autovacuum_analyze_threshold',
+            'autovacuum_analyze_scale_factor',
+            'autovacuum_vacuum_cost_delay',
+            'autovacuum_vacuum_cost_limit'
+        )
+        ORDER BY name;
+    """
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
+            cur.execute(query)
+            return cur.fetchall()

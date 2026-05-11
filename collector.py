@@ -143,6 +143,35 @@ def collect_index_health():
         log.error("Failed to collect index health: %s", e)
 
 
+def collect_autovacuum():
+    """Collect autovacuum activity, per-table stats, and configuration."""
+    try:
+        activity = db.fetch_autovacuum_activity()
+        stats = db.fetch_autovacuum_stats()
+        settings = db.fetch_autovacuum_settings()
+
+        record = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "active_workers": [_to_plain_dict(a) for a in activity],
+            "table_stats": [_to_plain_dict(s) for s in stats],
+            "settings": [_to_plain_dict(s) for s in settings],
+        }
+
+        storage.append_metric(config.AUTOVACUUM_FILE, record)
+        storage.rotate_if_needed(config.AUTOVACUUM_FILE)
+
+        stale_count = sum(
+            1 for s in stats
+            if s.get("seconds_since_vacuum") and float(s["seconds_since_vacuum"]) > 86400
+        )
+        log.info(
+            "Autovacuum: %d workers active, %d tables stale (>24h)",
+            len(activity), stale_count,
+        )
+    except Exception as e:
+        log.error("Failed to collect autovacuum data: %s", e)
+
+
 # ── Main Loop ────────────────────────────────────────────
 
 def main():
@@ -162,6 +191,7 @@ def main():
             collect_connection_metrics()
             collect_slow_queries()
             collect_index_health()
+            collect_autovacuum()
             log.info("── Done. Sleeping %ds ──\n", interval)
             time.sleep(interval)
     except KeyboardInterrupt:

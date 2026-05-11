@@ -187,6 +187,18 @@ with c6:
     </div>
     """, unsafe_allow_html=True)
 
+st.markdown("")
+c7, _, _ = st.columns(3)
+
+with c7:
+    st.markdown("""
+    <div class="feature-card">
+        <div class="feature-icon">🧹</div>
+        <div class="feature-name">Autovacuum</div>
+        <div class="feature-desc">Track vacuum activity, detect stale tables, and tune autovacuum config</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 # ── Footer ───────────────────────────────────────────────
 st.markdown("---")
 st.markdown(
