@@ -101,15 +101,20 @@ def fetch_slow_queries(limit=20):
             rows
         FROM pg_stat_statements
         WHERE
-            -- Exclude our own monitoring queries
+            -- ── Exclude our own monitoring / collector queries ──
             query NOT LIKE '%%pg_stat_statements%%'
             AND query NOT LIKE '%%pg_stat_activity%%'
             AND query NOT LIKE '%%pg_stat_database%%'
             AND query NOT LIKE '%%pg_stat_user_tables%%'
+            AND query NOT LIKE '%%pg_stat_user_indexes%%'
+            AND query NOT LIKE '%%pg_index%%'
+            AND query NOT LIKE '%%pg_relation_size%%'
+            AND query NOT LIKE '%%pg_size_pretty%%'
+            AND query NOT LIKE '%%pg_database_size%%'
             AND query NOT LIKE '%%information_schema%%'
             AND query NOT LIKE '%%pg_indexes%%'
 
-            -- Exclude DBeaver / pgAdmin / tool catalog introspection
+            -- ── Exclude DBeaver / pgAdmin / tool catalog introspection ──
             AND query NOT LIKE '%%pg_catalog%%'
             AND query NOT LIKE '%%pg_namespace%%'
             AND query NOT LIKE '%%pg_class%%'
@@ -123,8 +128,17 @@ def fetch_slow_queries(limit=20):
             AND query NOT LIKE '%%pg_roles%%'
             AND query NOT LIKE '%%pg_settings%%'
             AND query NOT LIKE '%%pg_available_extensions%%'
+            AND query NOT LIKE '%%pg_locks%%'
+            AND query NOT LIKE '%%pg_tablespace%%'
+            AND query NOT LIKE '%%pg_am%%'
+            AND query NOT LIKE '%%pg_depend%%'
+            AND query NOT LIKE '%%pg_shdescription%%'
 
-            -- Exclude transaction / session boilerplate
+            -- ── Exclude DBeaver EXPLAIN and query planning noise ──
+            AND query NOT ILIKE 'EXPLAIN%%'
+            AND query NOT ILIKE '%%autovacuum%%'
+
+            -- ── Exclude transaction / session boilerplate ──
             AND query NOT ILIKE '%%SHOW%%'
             AND query NOT ILIKE 'SET%%'
             AND query NOT ILIKE 'RESET%%'
@@ -132,8 +146,15 @@ def fetch_slow_queries(limit=20):
             AND query NOT ILIKE 'COMMIT%%'
             AND query NOT ILIKE 'ROLLBACK%%'
             AND query NOT ILIKE 'DEALLOCATE%%'
+            AND query NOT ILIKE 'DISCARD%%'
+            AND query NOT ILIKE 'LISTEN%%'
+            AND query NOT ILIKE 'NOTIFY%%'
+            AND query NOT ILIKE 'CLOSE%%'
+            AND query NOT ILIKE 'FETCH%%'
+            AND query NOT ILIKE 'MOVE%%'
+            AND query NOT ILIKE 'DECLARE%%'
 
-            -- Exclude empty/utility queries
+            -- ── Exclude empty/utility queries ──
             AND query NOT IN ('', ';')
             AND calls > 0
         ORDER BY mean_exec_time DESC
