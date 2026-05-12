@@ -342,5 +342,6 @@ if st.session_state.vacuum_ai_result is not None:
         if result.get("reasoning"):
             ui_helpers.render_reasoning_dropdown(result["reasoning"])
 
-        st.markdown(result.get("content", "No response generated."))
+        if st.toggle("🧹 Show AI Vacuum Tuning Recommendations", value=True, key="toggle_ai_vacuum"):
+            st.markdown(result.get("content", "No response generated."))
         ui_helpers.render_token_usage(result.get("usage", {}))

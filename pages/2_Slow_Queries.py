@@ -224,8 +224,8 @@ for i, q in enumerate(queries):
                 if result.get("reasoning"):
                     ui_helpers.render_reasoning_dropdown(result["reasoning"])
 
-                st.markdown("#### 💡 AI Recommendations")
-                st.markdown(result.get("content", "No response."))
+                if st.toggle("💡 Show AI Recommendations", value=True, key=f"toggle_ai_{i}"):
+                    st.markdown(result.get("content", "No response."))
                 ui_helpers.render_token_usage(result.get("usage", {}))
 
         # Render stored EXPLAIN result (separate from basic AI)
@@ -238,6 +238,6 @@ for i, q in enumerate(queries):
                 if result.get("reasoning"):
                     ui_helpers.render_reasoning_dropdown(result["reasoning"])
 
-                st.markdown("#### 🔬 EXPLAIN Plan Analysis")
-                st.markdown(result.get("content", "No response."))
+                if st.toggle("🔬 Show EXPLAIN Plan Analysis", value=True, key=f"toggle_explain_{i}"):
+                    st.markdown(result.get("content", "No response."))
                 ui_helpers.render_token_usage(result.get("usage", {}))

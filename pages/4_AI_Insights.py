@@ -142,7 +142,8 @@ if st.session_state.health_report is not None:
             ui_helpers.render_reasoning_dropdown(result["reasoning"])
 
         st.markdown("---")
-        st.markdown(result.get("content", "No response generated."))
+        if st.toggle("🧠 Show Full AI Analysis Report", value=True, key="toggle_ai_insights"):
+            st.markdown(result.get("content", "No response generated."))
 
         # Token usage footer
         usage = result.get("usage", {})

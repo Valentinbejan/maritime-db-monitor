@@ -256,5 +256,6 @@ if st.session_state.index_ai_result is not None:
         if result.get("reasoning"):
             ui_helpers.render_reasoning_dropdown(result["reasoning"])
 
-        st.markdown(result.get("content", "No response generated."))
+        if st.toggle("🗂️ Show AI Index Optimization Strategy", value=True, key="toggle_ai_index"):
+            st.markdown(result.get("content", "No response generated."))
         ui_helpers.render_token_usage(result.get("usage", {}))
