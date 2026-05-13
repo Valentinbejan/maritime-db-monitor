@@ -29,6 +29,8 @@ def render_sidebar():
         st.session_state.sb_show_db_info = True
     if "sb_show_metrics" not in st.session_state:
         st.session_state.sb_show_metrics = True
+    if "sb_show_admin" not in st.session_state:
+        st.session_state.sb_show_admin = False
 
     # CSS: Keep page nav always expanded, hide the collapse arrow
     st.markdown("""
@@ -163,35 +165,40 @@ def render_sidebar():
 
         st.markdown("---")
 
-        # ── Admin (always visible) ────────────────────────
-        st.markdown(
-            '<span style="color:#8892B0; font-weight:600; font-size:0.85rem;">⚙️ Admin</span>',
-            unsafe_allow_html=True,
+        # ── Admin (collapsible) ───────────────────────────
+        arrow_admin = "▾" if st.session_state.sb_show_admin else "▸"
+        st.button(
+            f"{arrow_admin} ⚙️ Admin",
+            key="_toggle_admin",
+            on_click=_toggle,
+            args=("sb_show_admin",),
+            use_container_width=True,
         )
 
         if "wipe_confirm" not in st.session_state:
             st.session_state.wipe_confirm = False
 
-        if st.button("🗑️ Wipe All Metrics Data", use_container_width=True):
-            st.session_state.wipe_confirm = True
+        if st.session_state.sb_show_admin:
+            if st.button("🗑️ Wipe All Metrics Data", use_container_width=True):
+                st.session_state.wipe_confirm = True
 
-        if st.session_state.wipe_confirm:
-            confirm = st.text_input(
-                "Type **DELETE** to confirm:", key="wipe_input",
-                placeholder="DELETE",
-            )
-            if confirm == "DELETE":
-                import glob, os
-                pattern = os.path.join(config.DATA_DIR, "*.jsonl")
-                deleted = 0
-                for f in glob.glob(pattern):
-                    os.remove(f)
-                    deleted += 1
-                st.session_state.wipe_confirm = False
-                st.success(f"✅ Deleted {deleted} data file(s). Dashboard reset!")
-                st.rerun()
-            elif confirm:
-                st.error("❌ Type exactly `DELETE` to confirm.")
+            if st.session_state.wipe_confirm:
+                confirm = st.text_input(
+                    "Type **DELETE** to confirm:", key="wipe_input",
+                    placeholder="DELETE",
+                )
+                if confirm == "DELETE":
+                    import glob, os
+                    pattern = os.path.join(config.DATA_DIR, "*.jsonl")
+                    deleted = 0
+                    for f in glob.glob(pattern):
+                        os.remove(f)
+                        deleted += 1
+                    st.session_state.wipe_confirm = False
+                    st.success(f"✅ Deleted {deleted} data file(s). Dashboard reset!")
+                    st.rerun()
+                elif confirm:
+                    st.error("❌ Type exactly `DELETE` to confirm.")
 
         st.markdown("---")
         st.markdown(
