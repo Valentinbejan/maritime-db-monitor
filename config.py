@@ -15,7 +15,11 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = int(os.getenv("DB_PORT", "5433"))
 DB_NAME = os.getenv("DB_NAME", "napa_maritime")
 DB_USER = os.getenv("DB_USER", "napa_user")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "napa_secret")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
+if not DB_PASSWORD:
+    raise RuntimeError(
+        "DB_PASSWORD is not set. Copy .env.example to .env and fill in the values."
+    )
 
 # ── Collector ────────────────────────────────────────────
 COLLECTION_INTERVAL = int(os.getenv("COLLECTION_INTERVAL", "30"))  # seconds
