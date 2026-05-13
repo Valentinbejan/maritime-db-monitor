@@ -6,7 +6,6 @@ Auto-refreshes every 30s using @st.fragment.
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from datetime import datetime, timezone
 
 import config
 import storage

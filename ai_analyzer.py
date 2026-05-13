@@ -28,9 +28,19 @@ def get_client() -> OpenAI | None:
 
 # ── LLM Call Helper ──────────────────────────────────────
 
-def _call_llm(system_prompt: str, user_prompt: str) -> dict:
+def call_llm(
+    system_prompt: str = None,
+    user_prompt: str = None,
+    *,
+    messages: list = None,
+) -> dict:
     """
     Send a chat completion request to OpenRouter.
+
+    Two call styles:
+      - call_llm(system_prompt, user_prompt)  — single turn
+      - call_llm(messages=[...])              — multi-turn (chat history)
+
     Returns a dict with keys: 'content', 'reasoning', 'usage', 'error'.
     """
     client = get_client()
@@ -42,13 +52,16 @@ def _call_llm(system_prompt: str, user_prompt: str) -> dict:
             "error": "No OpenRouter API key configured. Set OPENROUTER_API_KEY in your .env file.",
         }
 
+    if messages is None:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+
     try:
         response = client.chat.completions.create(
             model=config.LLM_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
+            messages=messages,
             temperature=0.3,
             extra_body={
                 "reasoning": {
@@ -208,7 +221,7 @@ Please provide:
 4. **Slow Query Analysis** — explain why the slowest queries may be slow given the maritime schema
 5. **Recommendations** — specific, actionable optimization steps (SQL, config changes, indexing)
 """
-    return _call_llm(build_system_prompt(), user_prompt)
+    return call_llm(build_system_prompt(), user_prompt)
 
 
 def analyze_slow_query(query_text: str, stats: dict) -> dict:
@@ -240,7 +253,7 @@ Please provide:
 2. **Optimization suggestions** — Include specific SQL (indexes, query rewrites, partitioning ideas)
 3. **Expected improvement** — Rough estimate of performance gain
 """
-    return _call_llm(build_system_prompt(), user_prompt)
+    return call_llm(build_system_prompt(), user_prompt)
 
 
 def analyze_explain_plan(query_text: str, stats: dict, explain_plan: list) -> dict:
@@ -283,7 +296,7 @@ Using the execution plan above, provide a **precise** analysis:
 4. **Buffer Analysis** — Comment on shared/local hit vs read ratios if available
 5. **Expected Improvement** — Estimate how the plan would change after your recommended optimizations
 """
-    return _call_llm(build_system_prompt(), user_prompt)
+    return call_llm(build_system_prompt(), user_prompt)
 
 
 def check_alerts(metrics: dict) -> list[dict]:

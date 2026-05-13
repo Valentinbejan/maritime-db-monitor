@@ -12,7 +12,6 @@ Shows:
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timezone
 
 import config
 import storage
@@ -28,10 +27,7 @@ st.caption("Monitor vacuum activity, detect stale tables, and tune autovacuum co
 
 # ── Load Latest Autovacuum Snapshot ───────────────────────
 latest = storage.read_latest(config.AUTOVACUUM_FILE)
-
-if not latest:
-    st.warning("⏳ No autovacuum data yet. Make sure `python collector.py` is running.")
-    st.stop()
+ui_helpers.no_data_guard(latest, source_label="autovacuum")
 
 active_workers = latest.get("active_workers", [])
 table_stats = latest.get("table_stats", [])
@@ -138,18 +134,10 @@ if table_stats:
 
     df = pd.DataFrame(display_data)
 
-    # Color-code dead tuple percentage
-    def highlight_dead_pct(val):
-        if isinstance(val, (int, float)):
-            if val > 20:
-                return "color: #FF6B6B; font-weight: 600"
-            elif val > 10:
-                return "color: #FFD93D; font-weight: 600"
-            else:
-                return "color: #64FFDA"
-        return ""
-
-    styled = df.style.map(highlight_dead_pct, subset=["Dead %"])
+    styled = df.style.map(
+        lambda v: ui_helpers.threshold_color(v, warn=10, crit=20),
+        subset=["Dead %"],
+    )
     st.dataframe(styled, use_container_width=True, hide_index=True)
 
     # Detail expanders for problem tables
@@ -266,22 +254,9 @@ st.markdown("Get AI-powered recommendations for your autovacuum configuration an
 if "vacuum_ai_result" not in st.session_state:
     st.session_state.vacuum_ai_result = None
 
-btn_col, model_col = st.columns([1, 2])
-with btn_col:
-    analyze = st.button(
-        "🧠 Analyze Vacuum Health",
-        disabled=not config.is_api_ready(),
-        type="primary",
-        use_container_width=True,
-    )
-with model_col:
-    st.caption(f"Model: `{config.LLM_MODEL}`")
-
-if not config.is_api_ready():
-    st.info(
-        "🔑 Set `OPENROUTER_API_KEY` in your `.env` file to enable AI analysis. "
-        "Get a free key at [openrouter.ai](https://openrouter.ai)."
-    )
+analyze = ui_helpers.ai_action_button(
+    "🧠 Analyze Vacuum Health", button_key="analyze_vacuum_health"
+)
 
 if analyze:
     # Build context
@@ -329,19 +304,14 @@ Please provide:
 """
 
     with st.spinner("🧠 AI is analyzing your vacuum health..."):
-        result = ai_analyzer._call_llm(ai_analyzer.build_system_prompt(), user_prompt)
-    st.session_state.vacuum_ai_result = result
+        st.session_state.vacuum_ai_result = ai_analyzer.call_llm(
+            ai_analyzer.build_system_prompt(), user_prompt
+        )
 
 # Render stored result
 if st.session_state.vacuum_ai_result is not None:
-    result = st.session_state.vacuum_ai_result
-
-    if result.get("error"):
-        st.error(result["error"])
-    else:
-        if result.get("reasoning"):
-            ui_helpers.render_reasoning_dropdown(result["reasoning"])
-
-        if st.toggle("🧹 Show AI Vacuum Tuning Recommendations", value=True, key="toggle_ai_vacuum"):
-            st.markdown(result.get("content", "No response generated."))
-        ui_helpers.render_token_usage(result.get("usage", {}))
+    ui_helpers.render_ai_result(
+        st.session_state.vacuum_ai_result,
+        toggle_label="🧹 Show AI Vacuum Tuning Recommendations",
+        toggle_key="toggle_ai_vacuum",
+    )

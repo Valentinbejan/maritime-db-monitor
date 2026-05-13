@@ -20,10 +20,7 @@ st.caption("Top slow queries from pg_stat_statements — click 'Analyze with AI'
 
 # ── Load Latest Slow Query Snapshot ──────────────────────
 latest = storage.read_latest(config.SLOW_QUERIES_FILE)
-
-if not latest or not latest.get("queries"):
-    st.warning("⏳ No slow query data yet. Make sure `python collector.py` is running.")
-    st.stop()
+ui_helpers.no_data_guard(latest and latest.get("queries"), source_label="slow query")
 
 queries = latest["queries"]
 snapshot_time = latest.get("timestamp", "Unknown")
@@ -65,17 +62,10 @@ for i, q in enumerate(queries):
 df = pd.DataFrame(display_data)
 
 # Color-code by mean execution time
-def highlight_slow(val):
-    if isinstance(val, (int, float)):
-        if val > 100:
-            return "color: #FF6B6B; font-weight: 600"
-        elif val > 10:
-            return "color: #FFD93D; font-weight: 600"
-        else:
-            return "color: #64FFDA"
-    return ""
-
-styled_df = df.style.map(highlight_slow, subset=["Mean Time (ms)"])
+styled_df = df.style.map(
+    lambda v: ui_helpers.threshold_color(v, warn=10, crit=100),
+    subset=["Mean Time (ms)"],
+)
 st.dataframe(styled_df, use_container_width=True, hide_index=True, height=400)
 
 # ── Per-Query Detail & AI Analysis ───────────────────────
@@ -216,28 +206,16 @@ for i, q in enumerate(queries):
 
         # Render stored AI result (persists across re-runs)
         if result_key in st.session_state.ai_results:
-            result = st.session_state.ai_results[result_key]
-
-            if result.get("error"):
-                st.error(result["error"])
-            else:
-                if result.get("reasoning"):
-                    ui_helpers.render_reasoning_dropdown(result["reasoning"])
-
-                if st.toggle("💡 Show AI Recommendations", value=True, key=f"toggle_ai_{i}"):
-                    st.markdown(result.get("content", "No response."))
-                ui_helpers.render_token_usage(result.get("usage", {}))
+            ui_helpers.render_ai_result(
+                st.session_state.ai_results[result_key],
+                toggle_label="💡 Show AI Recommendations",
+                toggle_key=f"toggle_ai_{i}",
+            )
 
         # Render stored EXPLAIN result (separate from basic AI)
         if explain_key in st.session_state.ai_results:
-            result = st.session_state.ai_results[explain_key]
-
-            if result.get("error"):
-                st.error(result["error"])
-            else:
-                if result.get("reasoning"):
-                    ui_helpers.render_reasoning_dropdown(result["reasoning"])
-
-                if st.toggle("🔬 Show EXPLAIN Plan Analysis", value=True, key=f"toggle_explain_{i}"):
-                    st.markdown(result.get("content", "No response."))
-                ui_helpers.render_token_usage(result.get("usage", {}))
+            ui_helpers.render_ai_result(
+                st.session_state.ai_results[explain_key],
+                toggle_label="🔬 Show EXPLAIN Plan Analysis",
+                toggle_key=f"toggle_explain_{i}",
+            )

@@ -41,8 +41,7 @@ with st.sidebar:
 
 # ── API Check ────────────────────────────────────────────
 
-client = ai_analyzer.get_client()
-if client is None:
+if not config.is_api_ready():
     st.info(
         "🔑 Set `OPENROUTER_API_KEY` in your `.env` file to enable the DBA Chat. "
         "Get a free key at [openrouter.ai](https://openrouter.ai)."
@@ -90,39 +89,24 @@ if prompt:
     for m in st.session_state.chat_messages:
         api_messages.append({"role": m["role"], "content": m["content"]})
 
-    # Stream the response
+    # Send to the LLM and render
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            try:
-                response = client.chat.completions.create(
-                    model=config.LLM_MODEL,
-                    messages=api_messages,
-                    temperature=0.3,
-                    extra_body={
-                        "reasoning": {
-                            "effort": "high"
-                        }
-                    },
-                )
+            result = ai_analyzer.call_llm(messages=api_messages)
 
-                raw = response.model_dump()
-                message_data = raw["choices"][0]["message"]
-                assistant_content = (message_data.get("content") or "").strip()
-                reasoning = message_data.get("reasoning")
-                usage = raw.get("usage", {})
-
-                # Show reasoning dropdown if present
-                if reasoning:
-                    ui_helpers.render_reasoning_dropdown(reasoning)
-
-                st.markdown(assistant_content)
-                ui_helpers.render_token_usage(usage)
-
-            except Exception as e:
-                assistant_content = f"❌ Error: {e}"
-                reasoning = None
-                usage = {}
-                st.error(assistant_content)
+        if result.get("error"):
+            assistant_content = f"❌ {result['error']}"
+            reasoning = None
+            usage = {}
+            st.error(assistant_content)
+        else:
+            assistant_content = result.get("content", "")
+            reasoning = result.get("reasoning")
+            usage = result.get("usage", {})
+            if reasoning:
+                ui_helpers.render_reasoning_dropdown(reasoning)
+            st.markdown(assistant_content)
+            ui_helpers.render_token_usage(usage)
 
     # Save assistant message with reasoning and usage to history
     st.session_state.chat_messages.append({

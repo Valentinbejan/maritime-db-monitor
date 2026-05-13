@@ -20,11 +20,7 @@ latest_sys = storage.read_latest(config.SYSTEM_METRICS_FILE)
 latest_conn = storage.read_latest(config.CONNECTION_METRICS_FILE)
 latest_slow = storage.read_latest(config.SLOW_QUERIES_FILE)
 
-has_data = latest_sys or latest_conn
-
-if not has_data:
-    st.warning("⏳ No metrics data yet. Run `python collector.py` first.")
-    st.stop()
+ui_helpers.no_data_guard(latest_sys or latest_conn)
 
 # ── Monitoring Alerts ────────────────────────────────────
 st.markdown("### 🚨 Monitoring Alerts")
@@ -102,54 +98,27 @@ if latest_slow and latest_slow.get("queries"):
 if latest_sys and latest_sys.get("table_bloat"):
     ai_metrics["table_bloat"] = latest_sys["table_bloat"]
 
-# Model info
-api_ready = config.is_api_ready()
-
-if not api_ready:
-    st.info(
-        "🔑 No OpenRouter API key configured. Set `OPENROUTER_API_KEY` in your `.env` file "
-        "to enable AI analysis. Get a free key at [openrouter.ai](https://openrouter.ai)."
-    )
-
 # Initialize session state for the health report
 if "health_report" not in st.session_state:
     st.session_state.health_report = None
 
-col_btn, col_model = st.columns([1, 2])
-with col_btn:
-    generate = st.button(
-        "🚀 Generate Health Report",
-        disabled=not api_ready,
-        type="primary",
-        use_container_width=True,
-    )
-with col_model:
-    st.caption(f"Model: `{config.LLM_MODEL}`")
+generate = ui_helpers.ai_action_button(
+    "🚀 Generate Health Report", button_key="generate_health_report"
+)
 
 if generate:
     with st.spinner("🧠 AI is analyzing your database — this may take 15-30 seconds..."):
-        result = ai_analyzer.generate_health_report(ai_metrics)
-    st.session_state.health_report = result
+        st.session_state.health_report = ai_analyzer.generate_health_report(ai_metrics)
 
 # Render stored result (persists across re-runs)
 if st.session_state.health_report is not None:
-    result = st.session_state.health_report
-
-    if result.get("error"):
-        st.error(result["error"])
-    else:
-        if result.get("reasoning"):
-            ui_helpers.render_reasoning_dropdown(result["reasoning"])
-
-        st.markdown("---")
-        if st.toggle("🧠 Show Full AI Analysis Report", value=True, key="toggle_ai_insights"):
-            st.markdown(result.get("content", "No response generated."))
-
-        # Token usage footer
-        usage = result.get("usage", {})
-        if usage:
-            st.markdown("---")
-            ui_helpers.render_token_usage(usage, layout="columns")
+    st.markdown("---")
+    ui_helpers.render_ai_result(
+        st.session_state.health_report,
+        toggle_label="🧠 Show Full AI Analysis Report",
+        toggle_key="toggle_ai_insights",
+        usage_layout="columns",
+    )
 
 # ── Footer ───────────────────────────────────────────────
 st.markdown("---")

@@ -25,10 +25,7 @@ st.caption("Detect missing indexes (slow full-table scans) and unused indexes (w
 
 # ── Load Latest Index Health Snapshot ─────────────────────
 latest = storage.read_latest(config.INDEX_HEALTH_FILE)
-
-if not latest:
-    st.warning("⏳ No index health data yet. Make sure `python collector.py` is running.")
-    st.stop()
+ui_helpers.no_data_guard(latest, source_label="index health")
 
 missing = latest.get("missing_indexes", [])
 unused = latest.get("unused_indexes", [])
@@ -44,13 +41,7 @@ with col2:
     st.metric("🗑️ Unused Indexes", len(unused))
 with col3:
     total_waste = sum(u.get("index_size_bytes", 0) for u in unused)
-    if total_waste > 1024 * 1024:
-        waste_str = f"{total_waste / (1024 * 1024):.1f} MB"
-    elif total_waste > 1024:
-        waste_str = f"{total_waste / 1024:.1f} KB"
-    else:
-        waste_str = f"{total_waste} B"
-    st.metric("💾 Wasted Disk Space", waste_str)
+    st.metric("💾 Wasted Disk Space", ui_helpers.format_bytes(total_waste))
 
 st.markdown("---")
 
@@ -77,18 +68,10 @@ if missing:
 
     df_missing = pd.DataFrame(display_missing)
 
-    # Color-code the seq scan percentage
-    def highlight_seq_pct(val):
-        if isinstance(val, (int, float)):
-            if val > 90:
-                return "color: #FF6B6B; font-weight: 600"
-            elif val > 70:
-                return "color: #FFD93D; font-weight: 600"
-            else:
-                return "color: #64FFDA"
-        return ""
-
-    styled = df_missing.style.map(highlight_seq_pct, subset=["Seq Scan %"])
+    styled = df_missing.style.map(
+        lambda v: ui_helpers.threshold_color(v, warn=70, crit=90),
+        subset=["Seq Scan %"],
+    )
     st.dataframe(styled, use_container_width=True, hide_index=True)
 
     # Detail expanders
@@ -138,18 +121,10 @@ if unused:
 
     df_unused = pd.DataFrame(display_unused)
 
-    # Color-code the scans column
-    def highlight_scans(val):
-        if isinstance(val, (int, float)):
-            if val == 0:
-                return "color: #FF6B6B; font-weight: 600"
-            elif val < 10:
-                return "color: #FFD93D; font-weight: 600"
-            else:
-                return "color: #64FFDA"
-        return ""
-
-    styled_unused = df_unused.style.map(highlight_scans, subset=["Scans"])
+    styled_unused = df_unused.style.map(
+        lambda v: ui_helpers.threshold_color(v, warn=10, crit=1, ascending=False),
+        subset=["Scans"],
+    )
     st.dataframe(styled_unused, use_container_width=True, hide_index=True)
 
     # Drop index suggestions
@@ -181,22 +156,9 @@ st.markdown("Get AI-powered recommendations for your index strategy.")
 if "index_ai_result" not in st.session_state:
     st.session_state.index_ai_result = None
 
-btn_col, model_col = st.columns([1, 2])
-with btn_col:
-    analyze = st.button(
-        "🧠 Analyze Index Health",
-        disabled=not config.is_api_ready(),
-        type="primary",
-        use_container_width=True,
-    )
-with model_col:
-    st.caption(f"Model: `{config.LLM_MODEL}`")
-
-if not config.is_api_ready():
-    st.info(
-        "🔑 Set `OPENROUTER_API_KEY` in your `.env` file to enable AI analysis. "
-        "Get a free key at [openrouter.ai](https://openrouter.ai)."
-    )
+analyze = ui_helpers.ai_action_button(
+    "🧠 Analyze Index Health", button_key="analyze_index_health"
+)
 
 if analyze:
     # Build the context for AI
@@ -243,19 +205,14 @@ Please provide:
 """
 
     with st.spinner("🧠 AI is analyzing your index health..."):
-        result = ai_analyzer._call_llm(ai_analyzer.build_system_prompt(), user_prompt)
-    st.session_state.index_ai_result = result
+        st.session_state.index_ai_result = ai_analyzer.call_llm(
+            ai_analyzer.build_system_prompt(), user_prompt
+        )
 
 # Render stored result
 if st.session_state.index_ai_result is not None:
-    result = st.session_state.index_ai_result
-
-    if result.get("error"):
-        st.error(result["error"])
-    else:
-        if result.get("reasoning"):
-            ui_helpers.render_reasoning_dropdown(result["reasoning"])
-
-        if st.toggle("🗂️ Show AI Index Optimization Strategy", value=True, key="toggle_ai_index"):
-            st.markdown(result.get("content", "No response generated."))
-        ui_helpers.render_token_usage(result.get("usage", {}))
+    ui_helpers.render_ai_result(
+        st.session_state.index_ai_result,
+        toggle_label="🗂️ Show AI Index Optimization Strategy",
+        toggle_key="toggle_ai_index",
+    )
