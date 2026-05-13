@@ -443,7 +443,8 @@ def fetch_autovacuum_activity():
             now() - xact_start                              AS duration,
             now() - query_start                             AS query_duration
         FROM pg_stat_activity
-        WHERE query ILIKE '%%autovacuum%%'
+        WHERE query LIKE 'autovacuum:%%'
+          AND pid != pg_backend_pid()
           AND state != 'idle'
         ORDER BY xact_start;
     """
