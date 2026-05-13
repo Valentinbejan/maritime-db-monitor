@@ -68,7 +68,7 @@ def read_metrics(filepath: str, since: datetime = None) -> list[dict]:
 def read_latest(filepath: str) -> dict | None:
     """
     Read the last (most recent) record from a JSONL file.
-    Efficient: reads from the end of the file.
+    Scans the file line-by-line and keeps the last non-empty line.
     Returns None if the file is empty or doesn't exist.
     """
     if not os.path.exists(filepath):

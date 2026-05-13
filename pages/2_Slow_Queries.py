@@ -76,6 +76,14 @@ st.markdown("### 🔍 Query Details & AI Analysis")
 if "ai_results" not in st.session_state:
     st.session_state.ai_results = {}
 
+# Lock flag: while not None, all action buttons render disabled.
+# Shape: (query_index: int, op_name: str) where op_name ∈
+# {"analyze", "explain", "discuss", "discuss_explain"}.
+if "pending_ai_op" not in st.session_state:
+    st.session_state.pending_ai_op = None
+
+busy = st.session_state.pending_ai_op is not None
+
 for i, q in enumerate(queries):
     query_text = q.get("query", "N/A")
     mean_ms = q.get("mean_exec_time_ms", 0)
@@ -108,12 +116,18 @@ for i, q in enumerate(queries):
 
         with btn_a1:
             analyze_clicked = st.button(
-                "🤖 Analyze with AI", key=f"analyze_q_{i}", use_container_width=True
+                "🤖 Analyze with AI",
+                key=f"analyze_q_{i}",
+                use_container_width=True,
+                disabled=busy,
             )
 
         with btn_a2:
             explain_clicked = st.button(
-                "🔬 EXPLAIN AI Analysis", key=f"explain_q_{i}", use_container_width=True
+                "🔬 EXPLAIN AI Analysis",
+                key=f"explain_q_{i}",
+                use_container_width=True,
+                disabled=busy,
             )
 
         # Action buttons — row 2: Chat
@@ -121,12 +135,18 @@ for i, q in enumerate(queries):
 
         with btn_b1:
             discuss_clicked = st.button(
-                "💬 Discuss in Chat", key=f"discuss_q_{i}", use_container_width=True
+                "💬 Discuss in Chat",
+                key=f"discuss_q_{i}",
+                use_container_width=True,
+                disabled=busy,
             )
 
         with btn_b2:
             discuss_explain_clicked = st.button(
-                "💬🔬 Chat with EXPLAIN", key=f"discuss_explain_q_{i}", use_container_width=True
+                "💬🔬 Chat with EXPLAIN",
+                key=f"discuss_explain_q_{i}",
+                use_container_width=True,
+                disabled=busy,
             )
 
         query_stats = {
@@ -136,84 +156,116 @@ for i, q in enumerate(queries):
             "rows": q.get("rows"),
         }
 
-        # Handle Analyze with AI
+        # Phase 1: a button click sets the pending op and reruns so every
+        # button (in every expander) re-renders in the disabled state.
         if analyze_clicked:
-            with st.spinner("🧠 AI is analyzing this query..."):
-                result = ai_analyzer.analyze_slow_query(
-                    query_text=query_text, stats=query_stats,
-                )
-            st.session_state.ai_results[result_key] = result
-
-        # Handle EXPLAIN AI Analysis
+            st.session_state.pending_ai_op = (i, "analyze")
+            st.rerun()
         if explain_clicked:
-            with st.spinner("🔬 Running EXPLAIN ANALYZE on the database..."):
-                explain_result = db.run_explain(query_text)
-
-            if explain_result.get("error"):
-                st.session_state.ai_results[explain_key] = {
-                    "error": f"EXPLAIN failed: {explain_result['error']}",
-                    "content": None, "reasoning": None, "usage": {},
-                }
-            else:
-                with st.spinner("🧠 AI is analyzing the execution plan..."):
-                    result = ai_analyzer.analyze_explain_plan(
-                        query_text=query_text,
-                        stats=query_stats,
-                        explain_plan=explain_result["plan"],
-                    )
-                st.session_state.ai_results[explain_key] = result
-
-        # Handle Discuss in Chat — query + stats only
+            st.session_state.pending_ai_op = (i, "explain")
+            st.rerun()
         if discuss_clicked:
-            chat_msg = (
-                f"I'd like to discuss this slow query from our database:\n\n"
-                f"```sql\n{query_text}\n```\n\n"
-                f"**Execution Statistics:**\n"
-                f"- Calls: {q.get('calls', 'N/A')}\n"
-                f"- Mean Execution Time: {q.get('mean_exec_time_ms', 'N/A')} ms\n"
-                f"- Total Execution Time: {q.get('total_exec_time_ms', 'N/A')} ms\n"
-                f"- Rows Returned: {q.get('rows', 'N/A')}\n\n"
-                f"Why might this query be slow, and how can I optimize it?"
-            )
-            st.session_state.chat_pending_query = chat_msg
-            st.switch_page("pages/5_DBA_Chat.py")
-
-        # Handle Discuss with EXPLAIN — query + stats + real execution plan
+            st.session_state.pending_ai_op = (i, "discuss")
+            st.rerun()
         if discuss_explain_clicked:
-            import json
-            with st.spinner("🔬 Running EXPLAIN ANALYZE..."):
-                explain_result = db.run_explain(query_text)
+            st.session_state.pending_ai_op = (i, "discuss_explain")
+            st.rerun()
 
-            if explain_result.get("error"):
-                st.error(f"EXPLAIN failed: {explain_result['error']}")
-            else:
-                plan_json = json.dumps(explain_result["plan"], indent=2)
-                chat_msg = (
-                    f"I'd like to discuss this slow query with its real execution plan:\n\n"
-                    f"```sql\n{query_text}\n```\n\n"
-                    f"**Execution Statistics:**\n"
-                    f"- Calls: {q.get('calls', 'N/A')}\n"
-                    f"- Mean Execution Time: {q.get('mean_exec_time_ms', 'N/A')} ms\n"
-                    f"- Total Execution Time: {q.get('total_exec_time_ms', 'N/A')} ms\n"
-                    f"- Rows Returned: {q.get('rows', 'N/A')}\n\n"
-                    f"**EXPLAIN ANALYZE Output (JSON):**\n"
-                    f"```json\n{plan_json}\n```\n\n"
-                    f"Walk me through the execution plan and tell me exactly "
-                    f"where the bottleneck is and how to fix it."
+        # Phase 2: if THIS expander owns the pending op, run it now.
+        op = st.session_state.pending_ai_op
+        if op is not None and op[0] == i:
+            _, op_name = op
+            try:
+                if op_name == "analyze":
+                    with st.spinner("🧠 AI is analyzing this query..."):
+                        st.session_state.ai_results[result_key] = ai_analyzer.analyze_slow_query(
+                            query_text=query_text, stats=query_stats,
+                        )
+
+                elif op_name == "explain":
+                    with st.spinner("🔬 Running EXPLAIN ANALYZE on the database..."):
+                        explain_result = db.run_explain(query_text)
+                    if explain_result.get("error"):
+                        st.session_state.ai_results[explain_key] = {
+                            "error": f"EXPLAIN failed: {explain_result['error']}",
+                            "content": None, "reasoning": None, "usage": {},
+                        }
+                    else:
+                        with st.spinner("🧠 AI is analyzing the execution plan..."):
+                            st.session_state.ai_results[explain_key] = ai_analyzer.analyze_explain_plan(
+                                query_text=query_text,
+                                stats=query_stats,
+                                explain_plan=explain_result["plan"],
+                            )
+
+                elif op_name == "discuss":
+                    chat_msg = (
+                        f"I'd like to discuss this slow query from our database:\n\n"
+                        f"```sql\n{query_text}\n```\n\n"
+                        f"**Execution Statistics:**\n"
+                        f"- Calls: {q.get('calls', 'N/A')}\n"
+                        f"- Mean Execution Time: {q.get('mean_exec_time_ms', 'N/A')} ms\n"
+                        f"- Total Execution Time: {q.get('total_exec_time_ms', 'N/A')} ms\n"
+                        f"- Rows Returned: {q.get('rows', 'N/A')}\n\n"
+                        f"Why might this query be slow, and how can I optimize it?"
+                    )
+                    st.session_state.chat_pending_query = chat_msg
+                    st.session_state.pending_ai_op = None
+                    st.switch_page("pages/5_DBA_Chat.py")
+
+                elif op_name == "discuss_explain":
+                    import json
+                    with st.spinner("🔬 Running EXPLAIN ANALYZE..."):
+                        explain_result = db.run_explain(query_text)
+                    if explain_result.get("error"):
+                        st.error(f"EXPLAIN failed: {explain_result['error']}")
+                    else:
+                        plan_json = json.dumps(explain_result["plan"], indent=2)
+                        chat_msg = (
+                            f"I'd like to discuss this slow query with its real execution plan:\n\n"
+                            f"```sql\n{query_text}\n```\n\n"
+                            f"**Execution Statistics:**\n"
+                            f"- Calls: {q.get('calls', 'N/A')}\n"
+                            f"- Mean Execution Time: {q.get('mean_exec_time_ms', 'N/A')} ms\n"
+                            f"- Total Execution Time: {q.get('total_exec_time_ms', 'N/A')} ms\n"
+                            f"- Rows Returned: {q.get('rows', 'N/A')}\n\n"
+                            f"**EXPLAIN ANALYZE Output (JSON):**\n"
+                            f"```json\n{plan_json}\n```\n\n"
+                            f"Walk me through the execution plan and tell me exactly "
+                            f"where the bottleneck is and how to fix it."
+                        )
+                        st.session_state.chat_pending_query = chat_msg
+                        st.session_state.pending_ai_op = None
+                        st.switch_page("pages/5_DBA_Chat.py")
+            finally:
+                st.session_state.pending_ai_op = None
+            st.rerun()
+
+        # Render stored AI results: tabs if both exist, inline otherwise.
+        has_basic = result_key in st.session_state.ai_results
+        has_explain = explain_key in st.session_state.ai_results
+
+        if has_basic and has_explain:
+            tab_basic, tab_explain = st.tabs(["💡 AI Analysis", "🔬 EXPLAIN Plan Analysis"])
+            with tab_basic:
+                ui_helpers.render_ai_result(
+                    st.session_state.ai_results[result_key],
+                    toggle_label="💡 Show AI Recommendations",
+                    toggle_key=f"toggle_ai_{i}",
                 )
-                st.session_state.chat_pending_query = chat_msg
-                st.switch_page("pages/5_DBA_Chat.py")
-
-        # Render stored AI result (persists across re-runs)
-        if result_key in st.session_state.ai_results:
+            with tab_explain:
+                ui_helpers.render_ai_result(
+                    st.session_state.ai_results[explain_key],
+                    toggle_label="🔬 Show EXPLAIN Plan Analysis",
+                    toggle_key=f"toggle_explain_{i}",
+                )
+        elif has_basic:
             ui_helpers.render_ai_result(
                 st.session_state.ai_results[result_key],
                 toggle_label="💡 Show AI Recommendations",
                 toggle_key=f"toggle_ai_{i}",
             )
-
-        # Render stored EXPLAIN result (separate from basic AI)
-        if explain_key in st.session_state.ai_results:
+        elif has_explain:
             ui_helpers.render_ai_result(
                 st.session_state.ai_results[explain_key],
                 toggle_label="🔬 Show EXPLAIN Plan Analysis",
