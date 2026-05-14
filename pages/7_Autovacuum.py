@@ -1,5 +1,5 @@
 """
-Page 7 — 🧹 Autovacuum: Track vacuum activity, stale tables, and configuration.
+Page 7 — Autovacuum: Track vacuum activity, stale tables, and configuration.
 
 Answers the DBA's critical question: "Is autovacuum actually running?"
 Shows:
@@ -22,7 +22,7 @@ import ui_helpers
 st.set_page_config(page_title="Autovacuum — NAPA Monitor", page_icon="🧹", layout="wide")
 sidebar.render_sidebar()
 
-st.markdown("# 🧹 Autovacuum Tracking")
+st.markdown("# :material/cleaning_services: Autovacuum Tracking")
 st.caption("Monitor vacuum activity, detect stale tables, and tune autovacuum configuration")
 
 # ── Load Latest Autovacuum Snapshot ───────────────────────
@@ -67,23 +67,23 @@ never_vacuumed = [
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     if active_workers:
-        st.metric("🔄 Active Workers", len(active_workers))
+        st.metric(":material/refresh: Active Workers", len(active_workers))
     else:
-        st.metric("🔄 Active Workers", "0", help="No autovacuum workers running right now")
+        st.metric(":material/refresh: Active Workers", "0", help="No autovacuum workers running right now")
 with col2:
-    st.metric("💀 Total Dead Tuples", f"{total_dead:,}")
+    st.metric(":material/dangerous: Total Dead Tuples", f"{total_dead:,}")
 with col3:
-    st.metric("⚠️ Stale Tables (>24h)", len(stale_tables))
+    st.metric(":material/warning: Stale Tables (>24h)", len(stale_tables))
 with col4:
-    st.metric("🚫 Never Vacuumed", len(never_vacuumed))
+    st.metric(":material/block: Never Vacuumed", len(never_vacuumed))
 
 st.markdown("---")
 
 # ── Active Autovacuum Workers ────────────────────────────
-st.markdown("### 🔄 Active Autovacuum Workers")
+st.markdown("### :material/refresh: Active Autovacuum Workers")
 
 if active_workers:
-    st.success(f"✅ Autovacuum is running — {len(active_workers)} worker(s) active right now.")
+    st.success(f":material/check_circle: Autovacuum is running — {len(active_workers)} worker(s) active right now.")
     for w in active_workers:
         query_preview = str(w.get("query", ""))[:120]
         duration = w.get("duration", "?")
@@ -93,7 +93,7 @@ if active_workers:
         )
 else:
     st.info(
-        "💤 No autovacuum workers active right now. This is normal — "
+        ":material/bedtime: No autovacuum workers active right now. This is normal — "
         "autovacuum runs periodically when tables accumulate enough dead tuples."
     )
 
@@ -101,7 +101,7 @@ else:
 av_enabled = next((s for s in settings if s["name"] == "autovacuum"), None)
 if av_enabled and av_enabled.get("setting") == "off":
     st.error(
-        "🔴 **CRITICAL: Autovacuum is DISABLED!** "
+        ":material/error: **CRITICAL: Autovacuum is DISABLED!** "
         "This will cause table bloat to grow unbounded. "
         "Run `ALTER SYSTEM SET autovacuum = on; SELECT pg_reload_conf();` immediately."
     )
@@ -109,7 +109,7 @@ if av_enabled and av_enabled.get("setting") == "off":
 st.markdown("---")
 
 # ── Per-Table Vacuum Status ──────────────────────────────
-st.markdown("### 📋 Per-Table Vacuum & Analyze Status")
+st.markdown("### :material/description: Per-Table Vacuum & Analyze Status")
 st.markdown(
     "Tables sorted by dead tuples. Red = stale (not vacuumed in >24h), "
     "Yellow = aging (>6h), Green = healthy."
@@ -138,7 +138,7 @@ if table_stats:
         lambda v: ui_helpers.threshold_color(v, warn=10, crit=20),
         subset=["Dead %"],
     )
-    st.dataframe(styled, use_container_width=True, hide_index=True)
+    st.dataframe(styled, width="stretch", hide_index=True)
 
     # Detail expanders for problem tables
     problem_tables = [
@@ -149,7 +149,7 @@ if table_stats:
     ]
 
     if problem_tables:
-        st.markdown("#### ⚠️ Tables Needing Attention")
+        st.markdown("#### :material/warning: Tables Needing Attention")
 
         for t in problem_tables:
             table = t.get("table_name", "?")
@@ -158,19 +158,19 @@ if table_stats:
             secs = t.get("seconds_since_vacuum")
 
             if t.get("last_any_vacuum") is None:
-                badge = "🚫"
+                badge = ":material/block:"
                 status = "Never vacuumed"
             elif secs and float(secs) > 86400:
-                badge = "🔴"
+                badge = ":material/error:"
                 status = f"Stale — last vacuum {_fmt_age(secs)}"
             elif secs and float(secs) > 21600:
-                badge = "🟡"
+                badge = ":material/warning:"
                 status = f"Aging — last vacuum {_fmt_age(secs)}"
             elif dead_pct > 10:
-                badge = "🟡"
+                badge = ":material/warning:"
                 status = f"High bloat — {dead_pct:.1f}% dead"
             else:
-                badge = "🟢"
+                badge = ":material/check_circle:"
                 status = "OK"
 
             with st.expander(f"{badge} {table} — {dead:,} dead tuples, {status}"):
@@ -211,7 +211,7 @@ else:
 st.markdown("---")
 
 # ── Autovacuum Configuration ─────────────────────────────
-st.markdown("### ⚙️ Autovacuum Configuration")
+st.markdown("### :material/settings: Autovacuum Configuration")
 
 if settings:
     config_data = []
@@ -224,9 +224,9 @@ if settings:
         })
 
     df_config = pd.DataFrame(config_data)
-    st.dataframe(df_config, use_container_width=True, hide_index=True)
+    st.dataframe(df_config, width="stretch", hide_index=True)
 
-    with st.expander("📖 What do these settings mean?"):
+    with st.expander(":material/menu_book: What do these settings mean?"):
         st.markdown("""
 | Parameter | What it controls |
 |-----------|-----------------|
@@ -248,14 +248,14 @@ else:
 st.markdown("---")
 
 # ── AI Analysis ──────────────────────────────────────────
-st.markdown("### 🤖 AI Vacuum Tuning")
+st.markdown("### :material/smart_toy: AI Vacuum Tuning")
 st.markdown("Get AI-powered recommendations for your autovacuum configuration and table maintenance.")
 
 if "vacuum_ai_result" not in st.session_state:
     st.session_state.vacuum_ai_result = None
 
 analyze = ui_helpers.ai_action_button(
-    "🧠 Analyze Vacuum Health", button_key="analyze_vacuum_health"
+    ":material/psychology: Analyze Vacuum Health", button_key="analyze_vacuum_health"
 )
 
 if analyze:
@@ -303,7 +303,7 @@ Please provide:
 5. **Monitoring Advice** — what thresholds should trigger alerts for this database
 """
 
-    with st.spinner("🧠 AI is analyzing your vacuum health..."):
+    with st.spinner(":material/psychology: AI is analyzing your vacuum health..."):
         st.session_state.vacuum_ai_result = ai_analyzer.call_llm(
             ai_analyzer.build_system_prompt(), user_prompt
         )
@@ -312,6 +312,6 @@ Please provide:
 if st.session_state.vacuum_ai_result is not None:
     ui_helpers.render_ai_result(
         st.session_state.vacuum_ai_result,
-        toggle_label="🧹 Show AI Vacuum Tuning Recommendations",
+        toggle_label=":material/cleaning_services: Show AI Vacuum Tuning Recommendations",
         toggle_key="toggle_ai_vacuum",
     )

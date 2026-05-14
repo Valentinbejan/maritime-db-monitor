@@ -1,7 +1,7 @@
 # Scenario 06 — Unused index.
 # Creates an index on telemetry_logs.fuel_consumption_lph that no normal
 # query uses. The dashboard flags it as wasted disk + slower writes.
-# Check the dashboard at: 🗂️ Index Health → Unused Indexes
+# Check the dashboard at: Index Health -> Unused Indexes
 # Run from project root:
 #   python tests/scenarios/06_unused_index.py
 #   python tests/scenarios/06_unused_index.py --cleanup

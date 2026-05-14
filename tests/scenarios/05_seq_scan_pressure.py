@@ -1,7 +1,7 @@
 # Scenario 05 — Sequential scan pressure.
 # Creates an unindexed table, fills it, then runs many full-table scans.
 # Inflates the seq_scan counter that drives the "Missing Indexes" panel.
-# Check the dashboard at: 🗂️ Index Health → Missing Indexes (look for
+# Check the dashboard at: Index Health -> Missing Indexes (look for
 # scenario_no_index with seq_scan_pct ≈ 100%)
 # Run from project root:
 #   python tests/scenarios/05_seq_scan_pressure.py

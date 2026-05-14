@@ -1,7 +1,7 @@
 # Scenario 02 — Table bloat (dead tuples).
 # Creates a `scenario_bloat` table, then churns it with UPDATEs to generate
 # many dead tuples without growing the live-row count.
-# Check the dashboard at: 📊 Overview → Table Bloat,  🧹 Autovacuum → Dead %
+# Check the dashboard at: Overview -> Table Bloat,  Autovacuum -> Dead %
 # Run from project root:
 #   python tests/scenarios/02_bloat.py
 #   python tests/scenarios/02_bloat.py --cleanup     # drop the test table

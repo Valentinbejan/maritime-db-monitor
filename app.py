@@ -27,6 +27,15 @@ sidebar.render_sidebar()
 # ── Custom CSS ───────────────────────────────────────────
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined');
+    .material-symbols-outlined {
+        font-family: 'Material Symbols Outlined';
+        font-weight: normal;
+        font-style: normal;
+        font-size: 2rem;
+        line-height: 1;
+        vertical-align: middle;
+    }
     .main-title {
         font-size: 2.5rem;
         font-weight: 700;
@@ -133,7 +142,7 @@ c1, c2, c3 = st.columns(3)
 with c1:
     st.markdown("""
     <div class="feature-card">
-        <div class="feature-icon">📊</div>
+        <div class="feature-icon"><span class="material-symbols-outlined">bar_chart</span></div>
         <div class="feature-name">Overview</div>
         <div class="feature-desc">Live metric cards, connection breakdown, and transaction rates</div>
     </div>
@@ -142,7 +151,7 @@ with c1:
 with c2:
     st.markdown("""
     <div class="feature-card">
-        <div class="feature-icon">🐢</div>
+        <div class="feature-icon"><span class="material-symbols-outlined">schedule</span></div>
         <div class="feature-name">Slow Queries</div>
         <div class="feature-desc">Top slow queries with per-query AI analysis and optimization tips</div>
     </div>
@@ -151,7 +160,7 @@ with c2:
 with c3:
     st.markdown("""
     <div class="feature-card">
-        <div class="feature-icon">📈</div>
+        <div class="feature-icon"><span class="material-symbols-outlined">trending_up</span></div>
         <div class="feature-name">Trends</div>
         <div class="feature-desc">Historical charts for CPU, memory, connections, and cache ratios</div>
     </div>
@@ -163,7 +172,7 @@ c4, c5, c6 = st.columns(3)
 with c4:
     st.markdown("""
     <div class="feature-card">
-        <div class="feature-icon">🤖</div>
+        <div class="feature-icon"><span class="material-symbols-outlined">smart_toy</span></div>
         <div class="feature-name">AI Insights</div>
         <div class="feature-desc">AI-powered health reports, anomaly detection, and monitoring alerts</div>
     </div>
@@ -172,7 +181,7 @@ with c4:
 with c5:
     st.markdown("""
     <div class="feature-card">
-        <div class="feature-icon">💬</div>
+        <div class="feature-icon"><span class="material-symbols-outlined">chat</span></div>
         <div class="feature-name">DBA Chat</div>
         <div class="feature-desc">Context-aware AI chat with live schema and metrics injected</div>
     </div>
@@ -181,7 +190,7 @@ with c5:
 with c6:
     st.markdown("""
     <div class="feature-card">
-        <div class="feature-icon">🗂️</div>
+        <div class="feature-icon"><span class="material-symbols-outlined">folder</span></div>
         <div class="feature-name">Index Health</div>
         <div class="feature-desc">Missing & unused index detection with AI optimization advice</div>
     </div>
@@ -193,7 +202,7 @@ c7, _, _ = st.columns(3)
 with c7:
     st.markdown("""
     <div class="feature-card">
-        <div class="feature-icon">🧹</div>
+        <div class="feature-icon"><span class="material-symbols-outlined">cleaning_services</span></div>
         <div class="feature-name">Autovacuum</div>
         <div class="feature-desc">Track vacuum activity, detect stale tables, and tune autovacuum config</div>
     </div>
@@ -203,7 +212,7 @@ with c7:
 st.markdown("---")
 st.markdown(
     '<div style="text-align: center; color: #4A5568; font-size: 0.85rem;">'
-    '🚢 NAPA Maritime Database Monitor — Built with Streamlit & OpenRouter AI'
+    '<span class="material-symbols-outlined" style="font-size:1rem;">directions_boat</span> NAPA Maritime Database Monitor — Built with Streamlit &amp; OpenRouter AI'
     '</div>',
     unsafe_allow_html=True,
 )

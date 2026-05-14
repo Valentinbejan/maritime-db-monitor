@@ -1,5 +1,5 @@
 """
-Page 6 — 🗂️ Index Health: Missing & unused index detection.
+Page 6 — Index Health: Missing & unused index detection.
 
 Shows:
   - Tables likely needing indexes (high sequential scan ratio)
@@ -20,7 +20,7 @@ import ui_helpers
 st.set_page_config(page_title="Index Health — NAPA Monitor", page_icon="🗂️", layout="wide")
 sidebar.render_sidebar()
 
-st.markdown("# 🗂️ Index Health")
+st.markdown("# :material/folder: Index Health")
 st.caption("Detect missing indexes (slow full-table scans) and unused indexes (wasted disk & slower writes)")
 
 # ── Load Latest Index Health Snapshot ─────────────────────
@@ -36,17 +36,17 @@ st.caption(f"Snapshot from: {snapshot_time}")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("🔍 Tables Needing Indexes", len(missing))
+    st.metric(":material/search: Tables Needing Indexes", len(missing))
 with col2:
-    st.metric("🗑️ Unused Indexes", len(unused))
+    st.metric(":material/delete: Unused Indexes", len(unused))
 with col3:
     total_waste = sum(u.get("index_size_bytes", 0) for u in unused)
-    st.metric("💾 Wasted Disk Space", ui_helpers.format_bytes(total_waste))
+    st.metric(":material/save: Wasted Disk Space", ui_helpers.format_bytes(total_waste))
 
 st.markdown("---")
 
 # ── Missing Indexes Section ──────────────────────────────
-st.markdown("### 🔍 Missing Indexes — Tables with Heavy Sequential Scans")
+st.markdown("### :material/search: Missing Indexes — Tables with Heavy Sequential Scans")
 st.markdown(
     "These tables have more sequential scans (full-table reads) than index scans, "
     "suggesting they need additional indexes for the queries hitting them."
@@ -72,13 +72,13 @@ if missing:
         lambda v: ui_helpers.threshold_color(v, warn=70, crit=90),
         subset=["Seq Scan %"],
     )
-    st.dataframe(styled, use_container_width=True, hide_index=True)
+    st.dataframe(styled, width="stretch", hide_index=True)
 
     # Detail expanders
     for m in missing:
         table = m.get("table_name", "?")
         seq_pct = float(m.get("seq_scan_pct", 0))
-        badge = "🔴" if seq_pct > 90 else ("🟡" if seq_pct > 70 else "🟢")
+        badge = ":material/error:" if seq_pct > 90 else (":material/warning:" if seq_pct > 70 else ":material/check_circle:")
 
         with st.expander(f"{badge} {table} — {seq_pct}% sequential scans"):
             dc1, dc2, dc3, dc4 = st.columns(4)
@@ -96,12 +96,12 @@ if missing:
                 f"Adding an index on frequently filtered columns could dramatically reduce this."
             )
 else:
-    st.success("✅ All tables have healthy index usage — no missing indexes detected.")
+    st.success(":material/check_circle: All tables have healthy index usage — no missing indexes detected.")
 
 st.markdown("---")
 
 # ── Unused Indexes Section ───────────────────────────────
-st.markdown("### 🗑️ Unused Indexes — Wasting Disk & Slowing Writes")
+st.markdown("### :material/delete: Unused Indexes — Wasting Disk & Slowing Writes")
 st.markdown(
     "These indexes exist but are rarely or never used by any query. "
     "They still consume disk space and slow down every INSERT/UPDATE/DELETE "
@@ -125,15 +125,15 @@ if unused:
         lambda v: ui_helpers.threshold_color(v, warn=10, crit=1, ascending=False),
         subset=["Scans"],
     )
-    st.dataframe(styled_unused, use_container_width=True, hide_index=True)
+    st.dataframe(styled_unused, width="stretch", hide_index=True)
 
     # Drop index suggestions
-    st.markdown("#### 🧹 Drop Candidates")
+    st.markdown("#### :material/cleaning_services: Drop Candidates")
     st.markdown("Review these indexes and consider dropping them if they're truly unused:")
 
     for u in unused:
         scans = u.get("idx_scan", 0)
-        badge = "🔴" if scans == 0 else "🟡"
+        badge = ":material/error:" if scans == 0 else ":material/warning:"
         idx_name = u.get("index_name", "?")
         table = u.get("table_name", "?")
         size = u.get("index_size", "?")
@@ -145,19 +145,19 @@ if unused:
                 f"It occupies **{size}** of disk space."
             )
 else:
-    st.success("✅ All indexes are actively used — no unused indexes detected.")
+    st.success(":material/check_circle: All indexes are actively used — no unused indexes detected.")
 
 st.markdown("---")
 
 # ── AI Analysis ──────────────────────────────────────────
-st.markdown("### 🤖 AI Index Optimization")
+st.markdown("### :material/smart_toy: AI Index Optimization")
 st.markdown("Get AI-powered recommendations for your index strategy.")
 
 if "index_ai_result" not in st.session_state:
     st.session_state.index_ai_result = None
 
 analyze = ui_helpers.ai_action_button(
-    "🧠 Analyze Index Health", button_key="analyze_index_health"
+    ":material/psychology: Analyze Index Health", button_key="analyze_index_health"
 )
 
 if analyze:
@@ -204,7 +204,7 @@ Please provide:
 5. **Best Practices** — any general indexing advice for this type of maritime data workload
 """
 
-    with st.spinner("🧠 AI is analyzing your index health..."):
+    with st.spinner(":material/psychology: AI is analyzing your index health..."):
         st.session_state.index_ai_result = ai_analyzer.call_llm(
             ai_analyzer.build_system_prompt(), user_prompt
         )
@@ -213,6 +213,6 @@ Please provide:
 if st.session_state.index_ai_result is not None:
     ui_helpers.render_ai_result(
         st.session_state.index_ai_result,
-        toggle_label="🗂️ Show AI Index Optimization Strategy",
+        toggle_label=":material/folder: Show AI Index Optimization Strategy",
         toggle_key="toggle_ai_index",
     )

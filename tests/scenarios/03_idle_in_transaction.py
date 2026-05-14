@@ -2,7 +2,7 @@
 # Opens a transaction, runs a small SELECT, then sleeps with the tx OPEN.
 # Postgres reports the connection as state='idle in transaction'.
 # Uses a raw psycopg2 connection (not the pool) so the tx state sticks.
-# Check the dashboard at: 📊 Overview → Connection Breakdown, sidebar "Idle in TX"
+# Check the dashboard at: Overview -> Connection Breakdown, sidebar "Idle in TX"
 # Run from project root:
 #   python tests/scenarios/03_idle_in_transaction.py            # 60s default
 #   python tests/scenarios/03_idle_in_transaction.py 30         # custom seconds

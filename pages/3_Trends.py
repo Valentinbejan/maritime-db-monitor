@@ -1,5 +1,5 @@
 """
-Page 3 — 📈 Trends: Historical charts with time-range selector.
+Page 3 — Trends: Historical charts with time-range selector.
 """
 
 import streamlit as st
@@ -13,7 +13,7 @@ import sidebar
 
 st.set_page_config(page_title="Trends — NAPA Monitor", page_icon="📈", layout="wide")
 sidebar.render_sidebar()
-st.markdown("# 📈 Historical Trends")
+st.markdown("# :material/trending_up: Historical Trends")
 st.caption("Monitor database and system performance over time")
 
 # ── Time Range Selector ──────────────────────────────────
@@ -33,7 +33,7 @@ sys_data = storage.read_metrics(config.SYSTEM_METRICS_FILE, since=since)
 conn_data = storage.read_metrics(config.CONNECTION_METRICS_FILE, since=since)
 
 if not sys_data and not conn_data:
-    st.warning("⏳ No data yet. Run `python collector.py`.")
+    st.warning(":material/hourglass_top: No data yet. Run `python collector.py`.")
     st.stop()
 
 st.caption(f"{len(sys_data)} system / {len(conn_data)} connection samples")
@@ -59,9 +59,9 @@ if sys_data:
                                  fillcolor="rgba(0,229,255,0.08)"))
         fig.add_hline(y=80, line_dash="dash", line_color="#FFD93D",
                       annotation_text="Warning 80%", annotation_font_color="#FFD93D")
-        fig.update_layout(title="🖥️ CPU Usage", yaxis=dict(title="%", **GRID),
+        fig.update_layout(title="CPU Usage", yaxis=dict(title="%", **GRID),
                           xaxis=GRID, **CHART)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with c2:
         fig = go.Figure()
@@ -70,9 +70,9 @@ if sys_data:
                                  fillcolor="rgba(100,255,218,0.08)"))
         fig.add_hline(y=80, line_dash="dash", line_color="#FFD93D",
                       annotation_text="Warning 80%", annotation_font_color="#FFD93D")
-        fig.update_layout(title="🧠 Memory Usage", yaxis=dict(title="%", **GRID),
+        fig.update_layout(title="Memory Usage", yaxis=dict(title="%", **GRID),
                           xaxis=GRID, **CHART)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     st.markdown("---")
     fig = go.Figure()
@@ -81,18 +81,18 @@ if sys_data:
     fig.add_hline(y=0.95, line_dash="dash", line_color="#FFD93D",
                   annotation_text="Optimal 95%", annotation_font_color="#FFD93D")
     lo = max(0, df["cache_hit_ratio"].min() - 0.01)
-    fig.update_layout(title="💾 Cache Hit Ratio", yaxis=dict(title="Ratio", range=[lo, 1.001], **GRID),
+    fig.update_layout(title="Cache Hit Ratio", yaxis=dict(title="Ratio", range=[lo, 1.001], **GRID),
                       xaxis=GRID, **CHART)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     st.markdown("---")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df["timestamp"], y=df["db_size_mb"], name="DB Size",
                              line=dict(color="#FF9800", width=2), fill="tozeroy",
                              fillcolor="rgba(255,152,0,0.08)"))
-    fig.update_layout(title="📦 Database Size", yaxis=dict(title="MB", **GRID),
+    fig.update_layout(title="Database Size", yaxis=dict(title="MB", **GRID),
                       xaxis=GRID, **CHART)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     st.markdown("---")
     c3, c4 = st.columns(2)
@@ -102,9 +102,9 @@ if sys_data:
                                  line=dict(color="#64FFDA", width=2)))
         fig.add_trace(go.Scatter(x=df["timestamp"], y=df["tx_rollback"], name="Rollbacks",
                                  line=dict(color="#FF6B6B", width=2)))
-        fig.update_layout(title="📝 Transactions", yaxis=dict(title="Count", **GRID),
+        fig.update_layout(title="Transactions", yaxis=dict(title="Count", **GRID),
                           xaxis=GRID, legend=dict(orientation="h", y=-0.25), **CHART)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with c4:
         if len(df) >= 2:
@@ -117,9 +117,9 @@ if sys_data:
                                      line=dict(color="#64FFDA", width=2)))
             fig.add_trace(go.Scatter(x=dr["timestamp"], y=dr["r_rate"], name="Rollback Rate",
                                      line=dict(color="#FF6B6B", width=2)))
-            fig.update_layout(title="⚡ TX Rate (Δ/interval)", yaxis=dict(title="Δ", **GRID),
+            fig.update_layout(title="TX Rate (Δ/interval)", yaxis=dict(title="Δ", **GRID),
                               xaxis=GRID, legend=dict(orientation="h", y=-0.25), **CHART)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
         else:
             st.info("Need more data for rate calc.")
 
@@ -133,8 +133,8 @@ if conn_data:
     for col, clr in [("active","#00E5FF"),("idle","#64FFDA"),("idle_in_tx","#FF6B6B"),("total","#8892B0")]:
         fig.add_trace(go.Scatter(x=df_c["timestamp"], y=df_c[col], name=col.replace("_"," ").title(),
                                  line=dict(color=clr, width=2)))
-    fig.update_layout(title="🔌 Connections Over Time", yaxis=dict(title="Count", **GRID),
+    fig.update_layout(title="Connections Over Time", yaxis=dict(title="Count", **GRID),
                       xaxis=GRID, legend=dict(orientation="h", y=-0.25), **CHART)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 else:
     st.info("No connection data for selected range.")

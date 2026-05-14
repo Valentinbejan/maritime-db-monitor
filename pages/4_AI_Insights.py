@@ -1,5 +1,5 @@
 """
-Page 4 — 🤖 AI Insights: Full health report generation + monitoring alerts.
+Page 4 — AI Insights: Full health report generation + monitoring alerts.
 """
 
 import streamlit as st
@@ -12,7 +12,7 @@ import ui_helpers
 
 st.set_page_config(page_title="AI Insights — NAPA Monitor", page_icon="🤖", layout="wide")
 sidebar.render_sidebar()
-st.markdown("# 🤖 AI Insights")
+st.markdown("# :material/smart_toy: AI Insights")
 st.caption("AI-powered health analysis and monitoring alerts via OpenRouter")
 
 # ── Load Latest Metrics ──────────────────────────────────
@@ -23,7 +23,7 @@ latest_slow = storage.read_latest(config.SLOW_QUERIES_FILE)
 ui_helpers.no_data_guard(latest_sys or latest_conn)
 
 # ── Monitoring Alerts ────────────────────────────────────
-st.markdown("### 🚨 Monitoring Alerts")
+st.markdown("### :material/notifications_active: Monitoring Alerts")
 
 # Build a combined metrics dict for alert checking
 alert_metrics = {}
@@ -44,14 +44,14 @@ alerts = ai_analyzer.check_alerts(alert_metrics)
 if alerts:
     for alert in alerts:
         if alert["level"] == "critical":
-            st.error(f"🔴 **CRITICAL — {alert['metric']}**: {alert['message']}")
+            st.error(f":material/error: **CRITICAL — {alert['metric']}**: {alert['message']}")
         else:
-            st.warning(f"🟡 **WARNING — {alert['metric']}**: {alert['message']}")
+            st.warning(f":material/warning: **WARNING — {alert['metric']}**: {alert['message']}")
 else:
-    st.success("✅ All metrics are within normal thresholds.")
+    st.success(":material/check_circle: All metrics are within normal thresholds.")
 
 # Show current thresholds
-with st.expander("⚙️ Alert Thresholds"):
+with st.expander(":material/settings: Alert Thresholds"):
     st.markdown("""
     | Metric | Warning | Critical |
     |--------|---------|----------|
@@ -65,11 +65,11 @@ with st.expander("⚙️ Alert Thresholds"):
 st.markdown("---")
 
 # ── AI Health Report ─────────────────────────────────────
-st.markdown("### 🧠 AI Health Report")
+st.markdown("### :material/psychology: AI Health Report")
 st.markdown("Generate a comprehensive analysis of your database health using AI.")
 
 # Show what data will be sent
-with st.expander("📋 Data that will be sent to AI"):
+with st.expander(":material/description: Data that will be sent to AI"):
     col1, col2 = st.columns(2)
     with col1:
         if latest_sys:
@@ -103,11 +103,11 @@ if "health_report" not in st.session_state:
     st.session_state.health_report = None
 
 generate = ui_helpers.ai_action_button(
-    "🚀 Generate Health Report", button_key="generate_health_report"
+    ":material/rocket_launch: Generate Health Report", button_key="generate_health_report"
 )
 
 if generate:
-    with st.spinner("🧠 AI is analyzing your database — this may take 15-30 seconds..."):
+    with st.spinner(":material/psychology: AI is analyzing your database — this may take 15-30 seconds..."):
         st.session_state.health_report = ai_analyzer.generate_health_report(ai_metrics)
 
 # Render stored result (persists across re-runs)
@@ -115,7 +115,7 @@ if st.session_state.health_report is not None:
     st.markdown("---")
     ui_helpers.render_ai_result(
         st.session_state.health_report,
-        toggle_label="🧠 Show Full AI Analysis Report",
+        toggle_label=":material/psychology: Show Full AI Analysis Report",
         toggle_key="toggle_ai_insights",
         usage_layout="columns",
     )

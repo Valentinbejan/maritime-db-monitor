@@ -3,7 +3,7 @@
 # when n_dead_tup > threshold (50) + scale_factor (0.2) × n_live_tup.
 # With 2000 live rows, ~450 dead tuples triggers a vacuum within the next
 # naptime window (default 60s).
-# Check the dashboard at: 🧹 Autovacuum → Active Workers + vacuum_count
+# Check the dashboard at: Autovacuum -> Active Workers + vacuum_count
 # Run from project root:
 #   python tests/scenarios/07_autovacuum_stress.py
 #   python tests/scenarios/07_autovacuum_stress.py --cleanup

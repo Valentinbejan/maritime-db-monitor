@@ -1,5 +1,5 @@
 """
-Page 5 — 💬 DBA Chat: Context-aware ChatOps assistant.
+Page 5 — DBA Chat: Context-aware ChatOps assistant.
 
 NOT a generic chatbot. Before every conversation, the system prompt is
 silently injected with:
@@ -20,7 +20,7 @@ import ui_helpers
 st.set_page_config(page_title="DBA Chat — NAPA Monitor", page_icon="💬", layout="wide")
 sidebar.render_sidebar()
 
-st.markdown("# 💬 DBA Chat")
+st.markdown("# :material/chat: DBA Chat")
 st.caption("Context-aware database assistant — your schema and live metrics are injected automatically")
 
 
@@ -33,8 +33,8 @@ if "chat_messages" not in st.session_state:
 # ── Chat-specific sidebar controls ───────────────────────
 with st.sidebar:
     st.markdown("---")
-    st.caption("💬 Schema & metrics are injected into every message.")
-    if st.button("🗑️ Clear Chat", use_container_width=True):
+    st.caption(":material/chat: Schema & metrics are injected into every message.")
+    if st.button(":material/delete: Clear Chat", width="stretch"):
         st.session_state.chat_messages = []
         st.rerun()
 
@@ -43,7 +43,7 @@ with st.sidebar:
 
 if not config.is_api_ready():
     st.info(
-        "🔑 Set `OPENROUTER_API_KEY` in your `.env` file to enable the DBA Chat. "
+        ":material/key: Set `OPENROUTER_API_KEY` in your `.env` file to enable the DBA Chat. "
         "Get a free key at [openrouter.ai](https://openrouter.ai)."
     )
     st.stop()
@@ -95,7 +95,7 @@ if prompt:
             result = ai_analyzer.call_llm(messages=api_messages)
 
         if result.get("error"):
-            assistant_content = f"❌ {result['error']}"
+            assistant_content = f":material/cancel: {result['error']}"
             reasoning = None
             usage = {}
             st.error(assistant_content)

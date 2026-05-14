@@ -1,7 +1,7 @@
 # Scenario 01 — Slow queries.
 # Runs heavy unindexed queries against telemetry_logs so they show up in
 # pg_stat_statements with high mean_exec_time.
-# Check the dashboard at: 🐢 Slow Queries  (entries appear within ~30s)
+# Check the dashboard at: Slow Queries  (entries appear within ~30s)
 # Run from project root:   python tests/scenarios/01_slow_query.py
 
 import sys

@@ -1,7 +1,7 @@
 # Scenario 04 — Connection storm.
 # Opens many parallel connections, holds them idle, then closes them.
 # Demonstrates the connection breakdown and the "High connection count" alert.
-# Check the dashboard at: 📊 Overview → Connection Breakdown,  🤖 AI Insights
+# Check the dashboard at: Overview -> Connection Breakdown,  AI Insights
 # Run from project root:
 #   python tests/scenarios/04_connection_storm.py             # 30 conns × 30s
 #   python tests/scenarios/04_connection_storm.py 50 20       # custom N + secs

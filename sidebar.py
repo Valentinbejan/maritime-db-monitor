@@ -35,6 +35,14 @@ def render_sidebar():
     # CSS: Keep page nav always expanded, hide the collapse arrow
     st.markdown("""
     <style>
+        @import url('https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined');
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            line-height: 1;
+            vertical-align: middle;
+        }
         /* Hide the collapse toggle arrow on sidebar navigation */
         [data-testid="stSidebarNav"] summary {
             display: none !important;
@@ -67,7 +75,7 @@ def render_sidebar():
     """, unsafe_allow_html=True)
 
     with st.sidebar:
-        st.markdown("### 🚢 NAPA Monitor")
+        st.markdown("### :material/directions_boat: NAPA Monitor")
         st.markdown("---")
 
         # ── Collector Status (always visible) ────────────
@@ -101,7 +109,7 @@ def render_sidebar():
             key="_toggle_db_info",
             on_click=_toggle,
             args=("sb_show_db_info",),
-            use_container_width=True,
+            width="stretch",
         )
 
         if st.session_state.sb_show_db_info:
@@ -121,7 +129,7 @@ def render_sidebar():
             key="_toggle_metrics",
             on_click=_toggle,
             args=("sb_show_metrics",),
-            use_container_width=True,
+            width="stretch",
         )
 
         if st.session_state.sb_show_metrics:
@@ -168,18 +176,18 @@ def render_sidebar():
         # ── Admin (collapsible) ───────────────────────────
         arrow_admin = "▾" if st.session_state.sb_show_admin else "▸"
         st.button(
-            f"{arrow_admin} ⚙️ Admin",
+            f"{arrow_admin} :material/settings: Admin",
             key="_toggle_admin",
             on_click=_toggle,
             args=("sb_show_admin",),
-            use_container_width=True,
+            width="stretch",
         )
 
         if "wipe_confirm" not in st.session_state:
             st.session_state.wipe_confirm = False
 
         if st.session_state.sb_show_admin:
-            if st.button("🗑️ Wipe All Metrics Data", use_container_width=True):
+            if st.button(":material/delete: Wipe All Metrics Data", width="stretch"):
                 st.session_state.wipe_confirm = True
 
             if st.session_state.wipe_confirm:
@@ -195,14 +203,14 @@ def render_sidebar():
                         os.remove(f)
                         deleted += 1
                     st.session_state.wipe_confirm = False
-                    st.success(f"✅ Deleted {deleted} data file(s). Dashboard reset!")
+                    st.success(f":material/check_circle: Deleted {deleted} data file(s). Dashboard reset!")
                     st.rerun()
                 elif confirm:
-                    st.error("❌ Type exactly `DELETE` to confirm.")
+                    st.error(":material/cancel: Type exactly `DELETE` to confirm.")
 
         st.markdown("---")
         st.markdown(
             '<div style="text-align:center; color:#4A5568; font-size:0.8rem;">'
-            '🚢 NAPA Maritime DB Monitor</div>',
+            '<span class="material-symbols-outlined" style="font-size:0.9rem;">directions_boat</span> NAPA Maritime DB Monitor</div>',
             unsafe_allow_html=True,
         )

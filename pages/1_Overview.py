@@ -1,5 +1,5 @@
 """
-Page 1 — 📊 Overview: Live metric cards, connection breakdown, transaction rates.
+Page 1 — Overview: Live metric cards, connection breakdown, transaction rates.
 Auto-refreshes every 30s using @st.fragment.
 """
 
@@ -45,14 +45,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("# 📊 Overview")
+st.markdown("# :material/bar_chart: Overview")
 
 # Manual refresh button (st.fragment requires Streamlit 1.37+)
 col_title, col_btn = st.columns([3, 1])
 with col_title:
     st.caption("Live database health metrics")
 with col_btn:
-    if st.button("🔄 Refresh", use_container_width=True):
+    if st.button(":material/refresh: Refresh", width="stretch"):
         st.rerun()
 
 
@@ -63,7 +63,7 @@ def live_metrics():
     latest_conn = storage.read_latest(config.CONNECTION_METRICS_FILE)
 
     if not latest_sys and not latest_conn:
-        st.warning("⏳ No metrics data yet. Make sure `python collector.py` is running.")
+        st.warning(":material/hourglass_top: No metrics data yet. Make sure `python collector.py` is running.")
         return
 
     # ── Metric Cards Row ─────────────────────────────────
@@ -118,7 +118,7 @@ def live_metrics():
                 margin=dict(t=20, b=20, l=20, r=20),
                 height=280,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
         with conn_col2:
             # Connection history line chart
@@ -153,7 +153,7 @@ def live_metrics():
                     margin=dict(t=40, b=40, l=40, r=20),
                     height=280,
                 )
-                st.plotly_chart(fig2, use_container_width=True)
+                st.plotly_chart(fig2, width="stretch")
             else:
                 st.info("Collecting connection history...")
 
@@ -187,7 +187,7 @@ def live_metrics():
             margin=dict(t=20, b=40, l=40, r=20),
             height=300,
         )
-        st.plotly_chart(fig3, use_container_width=True)
+        st.plotly_chart(fig3, width="stretch")
     else:
         st.info("Collecting transaction data...")
 
@@ -197,7 +197,7 @@ def live_metrics():
         bloat_df = pd.DataFrame(latest_sys["table_bloat"])
         if not bloat_df.empty:
             bloat_df.columns = ["Table", "Live Tuples", "Dead Tuples", "Dead Ratio"]
-            st.dataframe(bloat_df, use_container_width=True, hide_index=True)
+            st.dataframe(bloat_df, width="stretch", hide_index=True)
 
 
 # Run the fragment

@@ -1,5 +1,5 @@
 """
-Page 2 — 🐢 Slow Queries: Top slow queries with per-query AI analysis.
+Page 2 — Slow Queries: Top slow queries with per-query AI analysis.
 """
 
 import streamlit as st
@@ -15,7 +15,7 @@ import ui_helpers
 st.set_page_config(page_title="Slow Queries — NAPA Monitor", page_icon="🐢", layout="wide")
 sidebar.render_sidebar()
 
-st.markdown("# 🐢 Slow Queries")
+st.markdown("# :material/schedule: Slow Queries")
 st.caption("Top slow queries from pg_stat_statements — click 'Analyze with AI' for optimization tips")
 
 # ── Load Latest Slow Query Snapshot ──────────────────────
@@ -66,11 +66,11 @@ styled_df = df.style.map(
     lambda v: ui_helpers.threshold_color(v, warn=10, crit=100),
     subset=["Mean Time (ms)"],
 )
-st.dataframe(styled_df, use_container_width=True, hide_index=True, height=400)
+st.dataframe(styled_df, width="stretch", hide_index=True, height=400)
 
 # ── Per-Query Detail & AI Analysis ───────────────────────
 st.markdown("---")
-st.markdown("### 🔍 Query Details & AI Analysis")
+st.markdown("### :material/search: Query Details & AI Analysis")
 
 # Initialize session state for AI results
 if "ai_results" not in st.session_state:
@@ -90,11 +90,11 @@ for i, q in enumerate(queries):
 
     # Color indicator based on severity
     if mean_ms > 100:
-        badge = "🔴"
+        badge = ":material/error:"
     elif mean_ms > 10:
-        badge = "🟡"
+        badge = ":material/warning:"
     else:
-        badge = "🟢"
+        badge = ":material/check_circle:"
 
     with st.expander(f"{badge} Query #{i+1} — Mean: {mean_ms:.2f}ms | Calls: {q.get('calls', 0)}"):
         st.code(query_text, language="sql")
@@ -116,17 +116,17 @@ for i, q in enumerate(queries):
 
         with btn_a1:
             analyze_clicked = st.button(
-                "🤖 Analyze with AI",
+                ":material/smart_toy: Analyze with AI",
                 key=f"analyze_q_{i}",
-                use_container_width=True,
+                width="stretch",
                 disabled=busy,
             )
 
         with btn_a2:
             explain_clicked = st.button(
-                "🔬 EXPLAIN AI Analysis",
+                ":material/biotech: EXPLAIN AI Analysis",
                 key=f"explain_q_{i}",
-                use_container_width=True,
+                width="stretch",
                 disabled=busy,
             )
 
@@ -135,17 +135,17 @@ for i, q in enumerate(queries):
 
         with btn_b1:
             discuss_clicked = st.button(
-                "💬 Discuss in Chat",
+                ":material/chat: Discuss in Chat",
                 key=f"discuss_q_{i}",
-                use_container_width=True,
+                width="stretch",
                 disabled=busy,
             )
 
         with btn_b2:
             discuss_explain_clicked = st.button(
-                "💬🔬 Chat with EXPLAIN",
+                ":material/forum: Chat with EXPLAIN",
                 key=f"discuss_explain_q_{i}",
-                use_container_width=True,
+                width="stretch",
                 disabled=busy,
             )
 
@@ -177,13 +177,13 @@ for i, q in enumerate(queries):
             _, op_name = op
             try:
                 if op_name == "analyze":
-                    with st.spinner("🧠 AI is analyzing this query..."):
+                    with st.spinner(":material/psychology: AI is analyzing this query..."):
                         st.session_state.ai_results[result_key] = ai_analyzer.analyze_slow_query(
                             query_text=query_text, stats=query_stats,
                         )
 
                 elif op_name == "explain":
-                    with st.spinner("🔬 Running EXPLAIN ANALYZE on the database..."):
+                    with st.spinner(":material/biotech: Running EXPLAIN ANALYZE on the database..."):
                         explain_result = db.run_explain(query_text)
                     if explain_result.get("error"):
                         st.session_state.ai_results[explain_key] = {
@@ -191,7 +191,7 @@ for i, q in enumerate(queries):
                             "content": None, "reasoning": None, "usage": {},
                         }
                     else:
-                        with st.spinner("🧠 AI is analyzing the execution plan..."):
+                        with st.spinner(":material/psychology: AI is analyzing the execution plan..."):
                             st.session_state.ai_results[explain_key] = ai_analyzer.analyze_explain_plan(
                                 query_text=query_text,
                                 stats=query_stats,
@@ -215,7 +215,7 @@ for i, q in enumerate(queries):
 
                 elif op_name == "discuss_explain":
                     import json
-                    with st.spinner("🔬 Running EXPLAIN ANALYZE..."):
+                    with st.spinner(":material/biotech: Running EXPLAIN ANALYZE..."):
                         explain_result = db.run_explain(query_text)
                     if explain_result.get("error"):
                         st.error(f"EXPLAIN failed: {explain_result['error']}")
@@ -246,28 +246,28 @@ for i, q in enumerate(queries):
         has_explain = explain_key in st.session_state.ai_results
 
         if has_basic and has_explain:
-            tab_basic, tab_explain = st.tabs(["💡 AI Analysis", "🔬 EXPLAIN Plan Analysis"])
+            tab_basic, tab_explain = st.tabs([":material/lightbulb: AI Analysis", ":material/biotech: EXPLAIN Plan Analysis"])
             with tab_basic:
                 ui_helpers.render_ai_result(
                     st.session_state.ai_results[result_key],
-                    toggle_label="💡 Show AI Recommendations",
+                    toggle_label=":material/lightbulb: Show AI Recommendations",
                     toggle_key=f"toggle_ai_{i}",
                 )
             with tab_explain:
                 ui_helpers.render_ai_result(
                     st.session_state.ai_results[explain_key],
-                    toggle_label="🔬 Show EXPLAIN Plan Analysis",
+                    toggle_label=":material/biotech: Show EXPLAIN Plan Analysis",
                     toggle_key=f"toggle_explain_{i}",
                 )
         elif has_basic:
             ui_helpers.render_ai_result(
                 st.session_state.ai_results[result_key],
-                toggle_label="💡 Show AI Recommendations",
+                toggle_label=":material/lightbulb: Show AI Recommendations",
                 toggle_key=f"toggle_ai_{i}",
             )
         elif has_explain:
             ui_helpers.render_ai_result(
                 st.session_state.ai_results[explain_key],
-                toggle_label="🔬 Show EXPLAIN Plan Analysis",
+                toggle_label=":material/biotech: Show EXPLAIN Plan Analysis",
                 toggle_key=f"toggle_explain_{i}",
             )

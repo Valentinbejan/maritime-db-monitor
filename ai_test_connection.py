@@ -8,11 +8,11 @@ from openai import OpenAI
 
 def test_openrouter():
     print("=" * 50)
-    print("🧠 Testing OpenRouter AI Reasoning Capabilities...")
+    print("[*] Testing OpenRouter AI Reasoning Capabilities...")
     print("=" * 50)
 
     if not config.OPENROUTER_API_KEY:
-        print("❌ ERROR: OPENROUTER_API_KEY is not set.")
+        print("[X] ERROR: OPENROUTER_API_KEY is not set.")
         return
 
     print(f"Using Model: {config.LLM_MODEL}")
@@ -50,31 +50,31 @@ def test_openrouter():
         raw_response = response.model_dump()
         message_data = raw_response['choices'][0]['message']
 
-        print("\n✅ SUCCESS! Here is what happened:")
+        print("\n[OK] SUCCESS! Here is what happened:")
         print("-" * 50)
 
         # 1. Print the Reasoning (Inner Monologue)
         # OpenRouter puts this in a 'reasoning' field if the model supports it
         reasoning = message_data.get('reasoning')
         if reasoning:
-            print("🧠 AI'S INTERNAL THOUGHT PROCESS:")
+            print("[REASONING] AI'S INTERNAL THOUGHT PROCESS:")
             print(reasoning.strip())
             print("-" * 50)
         else:
-            print("🧠 No native reasoning tokens found (model may not support it).")
+            print("[REASONING] No native reasoning tokens found (model may not support it).")
             print("-" * 50)
 
         # 2. Print the Final Answer
-        print("🗣️ AI'S FINAL ANSWER:")
+        print("[ANSWER] AI'S FINAL ANSWER:")
         print(message_data.get('content').strip())
         print("-" * 50)
 
         # 3. Print Token Usage
         usage = raw_response.get('usage', {})
-        print(f"📊 Token Usage: {usage.get('total_tokens')} total tokens used.")
+        print(f"[USAGE] Token Usage: {usage.get('total_tokens')} total tokens used.")
 
     except Exception as e:
-        print(f"\n❌ FAILED to connect to OpenRouter: {e}")
+        print(f"\n[X] FAILED to connect to OpenRouter: {e}")
 
 if __name__ == "__main__":
     test_openrouter()

@@ -64,7 +64,7 @@ def render_reasoning_dropdown(reasoning_text: str) -> None:
         f'background:rgba(0,229,255,0.05); border-left:3px solid #00E5FF; '
         f'border-radius:0 8px 8px 0;">'
         f'<summary style="cursor:pointer; font-weight:600; color:#00E5FF;">'
-        f'🧠 Show AI Reasoning (Internal Thought Process)</summary>'
+        f'<span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">psychology</span> Show AI Reasoning (Internal Thought Process)</summary>'
         f'<div style="margin-top:0.8rem; color:#8892B0; font-size:0.9rem;">'
         f'{reasoning_html}</div></details>',
         unsafe_allow_html=True,
@@ -75,7 +75,7 @@ def no_data_guard(latest, source_label: str = "metrics") -> None:
     """Show a 'no data yet' warning and stop the page if `latest` is falsy."""
     if not latest:
         st.warning(
-            f"⏳ No {source_label} data yet. Make sure `python collector.py` is running."
+            f":material/hourglass_top: No {source_label} data yet. Make sure `python collector.py` is running."
         )
         st.stop()
 
@@ -84,7 +84,7 @@ def api_key_warning() -> None:
     """Show the 'set OPENROUTER_API_KEY' info block when the key is missing."""
     if not config.is_api_ready():
         st.info(
-            "🔑 Set `OPENROUTER_API_KEY` in your `.env` file to enable AI analysis. "
+            ":material/key: Set `OPENROUTER_API_KEY` in your `.env` file to enable AI analysis. "
             "Get a free key at [openrouter.ai](https://openrouter.ai)."
         )
 
@@ -101,7 +101,7 @@ def ai_action_button(button_label: str, button_key: str) -> bool:
             button_label,
             disabled=not api_ready,
             type="primary",
-            use_container_width=True,
+            width="stretch",
             key=button_key,
         )
     with model_col:
