@@ -26,7 +26,7 @@ COLLECTION_INTERVAL = int(os.getenv("COLLECTION_INTERVAL", "30"))  # seconds
 
 # ── OpenRouter AI ────────────────────────────────────────
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-LLM_MODEL = os.getenv("LLM_MODEL", "google/gemini-2.0-flash-001")
+LLM_MODEL = os.getenv("LLM_MODEL", "google/gemma-4-31b-it:free")
 
 # ── Paths ────────────────────────────────────────────────
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "metrics")
