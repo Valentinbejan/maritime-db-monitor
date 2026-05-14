@@ -58,8 +58,8 @@ The AI in this application does not just generate generic advice; it acts as a *
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-link>
-cd <repo-folder>
+git clone https://github.com/Valentinbejan/maritime-db-monitor.git
+cd maritime-db-monitor
 ```
 
 ### 2. Environment Setup
@@ -157,12 +157,3 @@ python tests/scenarios/05_seq_scan_pressure.py
 Check the dashboard: navigate to **Index Health** to see the AI suggest a new index.
 
 > Run `python tests/scenarios/cleanup_all.py` at any time to remove the test tables/indexes.
-
----
-
-## Thought Process & Technical Decisions
-
-- **Why Streamlit?** Streamlit allows for rapid, data-driven UI development in pure Python. It integrates natively with Pandas and Plotly, making it the perfect tool for a metrics dashboard.
-- **Why a decoupled `collector.py`?** If the metric collection logic was built directly into the Streamlit app, the collection intervals would be tied to user page refreshes, and long-running queries could block the UI. A separate daemon ensures reliable, exact-interval time-series data.
-- **Why JSONL for storage?** Flat files satisfy the assignment requirement without requiring a second database (like Prometheus or InfluxDB). JSON Lines (`.jsonl`) is ideal because you can cleanly append new records to the end of the file without loading the whole file into memory.
-- **Why `pg_stat_statements`?** It is the industry standard for Postgres performance tuning. It allows the app to catch historically slow queries rather than just relying on `pg_stat_activity` (which only shows currently executing queries).
