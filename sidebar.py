@@ -75,8 +75,6 @@ def render_sidebar():
     """, unsafe_allow_html=True)
 
     with st.sidebar:
-        st.markdown("### :material/directions_boat: NAPA Monitor")
-        st.markdown("---")
 
         # ── Collector Status (always visible) ────────────
         last_modified = storage.get_last_modified(config.SYSTEM_METRICS_FILE)

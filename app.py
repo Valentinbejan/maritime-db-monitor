@@ -86,7 +86,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Main Content ─────────────────────────────────────────
-st.markdown('<div class="main-title">NAPA Maritime DB Monitor</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="main-title">'
+    '<span class="material-symbols-outlined" style="font-size:2.5rem; vertical-align:-0.3rem; margin-right:0.5rem;">directions_boat</span>'
+    'NAPA Maritime DB Monitor'
+    '</div>',
+    unsafe_allow_html=True,
+)
 st.markdown(
     '<div class="sub-title">Real-time PostgreSQL health monitoring with AI-powered insights for maritime fleet databases</div>',
     unsafe_allow_html=True,
